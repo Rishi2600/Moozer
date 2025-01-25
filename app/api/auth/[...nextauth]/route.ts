@@ -24,7 +24,7 @@ const handler = NextAuth({
             },
             async authorize(credentials) {
                 console.log(credentials)
-                //here the database logics will be written
+                //here the authentication with database logics will be written
                 const user = { id: "1", name: "Admin", email: "Amdin@example.com" }
                 if(user) {
                     return user;
