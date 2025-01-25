@@ -20,3 +20,5 @@ export default function NavBar() {
         </>
     )
 }
+//redirecting logic is not yet set,
+//redirecting logic will be set when we use a callbackUrl under the Link tag
