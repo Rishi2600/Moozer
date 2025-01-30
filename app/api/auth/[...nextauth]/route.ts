@@ -1,9 +1,13 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import GithubProvider from "next-auth/providers/github";
 
 if(!process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_CLIENT_ID) {
-    throw new Error("Credentials missing from the OAuth")
+    throw new Error("Credentials missing from the google OAuth")
+}
+if(!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    throw new Error("credentials missing from github OAuth")
 }
 
 const handler = NextAuth({
@@ -15,6 +19,10 @@ const handler = NextAuth({
             },
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
+        }),
+        GithubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET
         }),
         CredentialsProvider({
             name: "Credentials",
