@@ -15,7 +15,12 @@ const handler = NextAuth({
         GoogleProvider({
             profile(profile){
                 console.log(profile)
-                return profile;
+
+                const id = profile.sub
+                return {
+                    profile,
+                    id
+                }
             },
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
