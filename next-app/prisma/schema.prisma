@@ -14,23 +14,26 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
+  id    Int      @id @default(autoincrement())
+  email String   @unique
   name  String?
   songs String[]
 }
 
 model StreamHistory {
-  songId      Int     @id @default(autoincrement())
-  songs       String[]
-  timePlayed  Int?
+  songId     Int      @id @default(autoincrement())
+  songs      String[]
+  timePlayed Int?
 }
 
 model Space {
-  id    Int   @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
+  name     String
+  hostId   String
+  host     String
+  isActive Boolean @default(true)
 }
 
 model ActiveStream {
-  id    Int   @id @default(autoincrement())
-
+  id Int @id @default(autoincrement())
 }
