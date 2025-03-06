@@ -19,3 +19,18 @@ model User {
   name  String?
   songs String[]
 }
+
+model StreamHistory {
+  songId      Int     @id @default(autoincrement())
+  songs       String[]
+  timePlayed  Int?
+}
+
+model Space {
+  id    Int   @id @default(autoincrement())
+}
+
+model ActiveStream {
+  id    Int   @id @default(autoincrement())
+
+}
