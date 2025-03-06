@@ -23,17 +23,23 @@ model User {
 model StreamHistory {
   songId     Int      @id @default(autoincrement())
   songs      String[]
+  songUrl    String
   timePlayed Int?
 }
 
 model Space {
   id       Int     @id @default(autoincrement())
   name     String
-  hostId   String
+  songs    String?
+  hostId   Int
   host     String
   isActive Boolean @default(true)
 }
 
-model ActiveStream {
-  id Int @id @default(autoincrement())
+model CurrentStream {
+  id         Int    @id @default(autoincrement())
+  streamName String
+  userId     String
+  username   String
+  streamId   Int    @unique
 }
