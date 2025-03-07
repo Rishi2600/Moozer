@@ -31,7 +31,7 @@ model Space {
   id       Int     @id @default(autoincrement())
   name     String
   songs    String?
-  hostId   Int
+  hostId   Int  @unique
   host     String
   isActive Boolean @default(true)
 }
@@ -39,7 +39,7 @@ model Space {
 model CurrentStream {
   id         Int    @id @default(autoincrement())
   streamName String
-  userId     String
+  userId     String @unique
   username   String
   streamId   Int    @unique
 }
