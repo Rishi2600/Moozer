@@ -31,7 +31,7 @@ model Space {
   id       Int     @id @default(autoincrement())
   name     String
   songs    String?
-  hostId   Int  @unique
+  hostId   Int     @unique
   host     String
   isActive Boolean @default(true)
 }
