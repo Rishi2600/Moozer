@@ -9,3 +9,5 @@ export default function Home() {
     </>
   )
 }
+
+//component rendering flow (keeping next-auth in mind) -> layout > providers > page > components

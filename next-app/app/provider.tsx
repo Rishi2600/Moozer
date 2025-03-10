@@ -13,3 +13,4 @@ export function Providers({children}: {
 }
 
 //providers needs to run on the client, thus we used client component here.
+//we can use getServerSession if we want the component to be the server component.
