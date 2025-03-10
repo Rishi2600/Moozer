@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 const prisma = new PrismaClient();
 
-export default async function adding(
+export default async function GET(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -17,17 +17,4 @@ export default async function adding(
   res.json({
     message: "added some data to the db for testing",
   });
-}
-
-export async function fetching(req: NextApiRequest, res: NextApiResponse) {
-    const data = await prisma.user.findMany({
-        where: {
-            email: "alice@prisma.io",
-            name: "Alice"
-        }
-    });
-    console.log(data);
-    res.json({
-        data: data
-    })
 }
