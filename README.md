@@ -16,15 +16,15 @@ Steps & Architecture
 2. Add NextAuth for Authentication (Google, Credentials)
 3. Create the Schema for User, Space, ActiveStream, StreamHistory
 4. Create endpoints for lets
-  1. a user create a space
-  2. end users add stream
-  3. end users upvote/cancel upvote on stream
-  4. Lets everyone fetch the current stream (with their upvote)
+  * a user create a space
+  * end users add stream
+  * end users upvote/cancel upvote on stream
+  * Lets everyone fetch the current stream (with their upvote)
 5. Create a WebSocket server where
-  1. Users can subscribe to streams (updates on a certain room)
-  2. Users get back an update whenever upvotes change
+  * Users can subscribe to streams (updates on a certain room)
+  * Users get back an update whenever upvotes change
 6. Create the frontend
-  1. Landing page
-  2. Spaces page
-  3. Individual space change
+  * Landing page
+  * Spaces page
+  * Individual space change
 
