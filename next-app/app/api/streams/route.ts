@@ -1,5 +1,6 @@
+import { z } from "zod";
+import { prismaClient } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import {z} from "zod";
 
 const CreateStreamSchema = z.object({
     creatorId: z.string(),
@@ -9,12 +10,18 @@ const CreateStreamSchema = z.object({
     .includes("youtube", {
         message: "the url must be from the youtube or spotify domain"
     })
-})
+});
 
 export async function POST (req: NextRequest) {
     try {
         const data = CreateStreamSchema.parse(await req.json());
         console.log(data.creatorId)
+        
+        prismaClient.stream.create({
+            //@ts-ignore
+            userId: data.creatorId,
+        })
+
     }catch(e) {
         console.log(e)
         return NextResponse.json({
