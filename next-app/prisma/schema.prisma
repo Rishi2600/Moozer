@@ -14,10 +14,21 @@ datasource db {
 }
 
 model User {
-  id    Int      @id @default(autoincrement())
-  email String   @unique
-  name  String?
-  songs String[]
+  id       String   @id @default(uuid())
+  email    String
+  name     String?
+  provider Provider
+  role     Role
+}
+
+enum Provider {
+  Google
+  GitHub
+}
+
+enum Role {
+  Streamer
+  Listener
 }
 
 model StreamHistory {
