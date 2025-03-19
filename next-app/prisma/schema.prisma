@@ -18,17 +18,25 @@ model User {
   email    String
   name     String?
   provider Provider
-  role     Role
   streams  Stream[]
+  upvotes  Upvote[]
 }
 
 model Stream {
-  id     String     @id @default(uuid())
-  type   StreamType
-  active Boolean    @default(true)
-  upvote Int
-  userId String
-  user   User       @relation(fields: [userId], references: [id])
+  id      String     @id @default(uuid())
+  type    StreamType
+  active  Boolean    @default(true)
+  upvotes Upvote[]
+  userId  String
+  user    User       @relation(fields: [userId], references: [id])
+}
+
+model Upvote {
+  id       String @id @default(uuid())
+  UserId   String
+  StreamId String
+  user     User   @relation(fields: [UserId], references: [id])
+  Stream   Stream @relation(fields: [StreamId], references: [id])
 }
 
 enum StreamType {
@@ -39,33 +47,4 @@ enum StreamType {
 enum Provider {
   Google
   GitHub
-}
-
-enum Role {
-  Streamer
-  Listener
-}
-
-model StreamHistory {
-  songId     Int      @id @default(autoincrement())
-  songs      String[]
-  songUrl    String
-  timePlayed Int?
-}
-
-model Space {
-  id       Int     @id @default(autoincrement())
-  name     String
-  songs    String?
-  hostId   Int     @unique
-  host     String
-  isActive Boolean @default(true)
-}
-
-model CurrentStream {
-  id         Int    @id @default(autoincrement())
-  streamName String
-  userId     String @unique
-  username   String
-  streamId   Int    @unique
 }
