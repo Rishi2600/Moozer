@@ -18,8 +18,9 @@ export async function POST (req: NextRequest) {
         console.log(data.creatorId)
         
         prismaClient.stream.create({
-            //@ts-ignore
             userId: data.creatorId,
+            url: data.url,
+            
         })
 
     }catch(e) {
