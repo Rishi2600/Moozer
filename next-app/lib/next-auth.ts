@@ -1,6 +1,8 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
+import { signIn } from "next-auth/react";
+import { prismaClient } from "./db";
 
 if(!process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_CLIENT_ID) {
     throw new Error("Credentials missing from the google OAuth")
@@ -45,5 +47,25 @@ export const authOptions = {
                 }
             }
         })
-    ]
+    ],
+    callbacks: {
+        async signIn(params: any) {
+            console.log(params);
+            if(!params.user.email) {
+                return false;
+            }
+
+            try {
+                await prismaClient.user.create({
+                    data: {
+                        email: params.user.email,
+                        provider: "Google"
+                    }
+                })
+            } catch (e){
+                console.log(e);
+            }
+            return true;
+        }
+    }
 }
