@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         })
     }
 
+    //here, this is the logic of the endpoint
     try{
         const data = CreateDownvoteSchema.parse(await req.json())
         await prismaClient.upvote.delete({
