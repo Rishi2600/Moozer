@@ -60,7 +60,7 @@ export default function Home() {
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-75"></div>
               <div className="relative bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
                 <img 
-                  src="/api/placeholder/600/400" 
+                  src="https://imgs.search.brave.com/BjZYdP1Th3N7uWVdti7g8Cc3GVEyMjOKAtSVUE0l1xc/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90dW5l/dGFuay5pbWdpeC5u/ZXQvYWNvdXN0aWMu/anBnP2F1dG89Zm9y/bWF0Jml4bGliPXJl/YWN0LTkuMTAuMCZo/PTUxMiZ3PTUxMg" 
                   alt="WaveStream App Interface" 
                   className="w-full h-auto rounded-t-xl"
                 />
