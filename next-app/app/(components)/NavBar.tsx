@@ -8,10 +8,10 @@ export default function NavBar() {
     
     return (
         <>
-        <header className="bg-gray-600 text-gray-100">
+        <header className="bg-gray-900 text-gray-100">
             <nav className="flex justify-between items w-full px-10 py-4">
-                <div>Moosi</div>
-                <div>
+                <div className="text-5xl font-sans font-semibold">Moosi</div>
+                <div className="font-sans font-semibold">
                     {session.status==="unauthenticated" && <button onClick={()=> {signIn()}}>SignIn</button>}
                     {session.status==="authenticated" && <button onClick={()=> {signOut()}}>Signout</button>}
                 </div>

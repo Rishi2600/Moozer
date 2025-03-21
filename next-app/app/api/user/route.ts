@@ -18,9 +18,14 @@ export async function GET(req: NextRequest) {
     });
 
     if (!user) {
-        return NextResponse.json({ message: "User not found" }, { status: 404 });
+        return NextResponse.json({ 
+            message: "User not found" 
+        }, 
+        { 
+            status: 404 
+        });
     }
 
     return NextResponse.json({ creatorId: user.id });
 }
-//this is done to extract the uuid at the first place.
+//this is done to extract the creatorId -- uuid at the first place.
