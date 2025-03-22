@@ -10,7 +10,7 @@ export default function NavBar() {
         <>
         <header className="bg-gray-900 text-gray-100">
             <nav className="flex justify-between items w-full px-10 py-4">
-                <div className="text-5xl font-sans font-semibold">Moosi</div>
+                <div className="text-5xl text-gray-200 font-sans font-bold ">Moozer</div>
                 <div className="font-sans font-semibold">
                     {session.status==="unauthenticated" && <button className="bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-sm " 
                     onClick={()=> {signIn()}}>

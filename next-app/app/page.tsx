@@ -3,6 +3,7 @@ import React from 'react';
 import { Music, Play, ThumbsUp, Headphones, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import MusicStreamingDashboard from "./(components)/dashboard/Dashboard";
 
 export default function Home() {
   return(
