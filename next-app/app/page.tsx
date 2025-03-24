@@ -3,12 +3,14 @@ import React from 'react';
 import { Music, Play, ThumbsUp, Headphones, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import Redirect from "./(components)/Redirect";
 
 export default function Home() {
   return(
     <>
       <div>
         <NavBar />
+        <Redirect />
       </div>
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
       {/* Navigation */}
