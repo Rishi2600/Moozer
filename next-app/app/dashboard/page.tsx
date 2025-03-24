@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { Plus, Home, ThumbsUp } from 'lucide-react';
+import { signOut, useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
 const MusicStreamingDashboard = () => {
   const [streamUrl, setStreamUrl] = useState('');
@@ -73,17 +75,20 @@ const MusicStreamingDashboard = () => {
     alert(`Stream URL set to: ${streamUrl}`);
   };
 
+  const session = useSession();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md transition flex items-center space-x-2">
-            <Home size={18} />
-            <span>Homepage</span>
-          </button>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md transition flex items-center space-x-2">
+              <Home size={18} />
+              <span>Homepage</span>
+            </button>
+              {/* {session.status==="authenticated" && <span><Button className=''
+              onClick={() => {signOut()}}>Logout</Button></span>} */}
         </div>
-        
         <div className="space-y-5">
           {/* Stream Preview - Full Width */}
           <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
