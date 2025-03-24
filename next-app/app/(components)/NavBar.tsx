@@ -14,7 +14,7 @@ export default function NavBar() {
             <nav className="flex justify-between items w-full px-10 py-4">
                 <div className="text-5xl text-gray-200 font-sans font-bold ">Moozer</div>
                 <div className="font-sans font-semibold">
-                    {session.status==="unauthenticated" && <Button variant="ghost" className="text-white hover:text-purple-400" 
+                    {session.status==="unauthenticated" && <Button variant="ghost" className="text-white hover:text-purple-400 mr-px" 
                     onClick={()=> {signIn()}}>
                         Login
                     </Button>}
