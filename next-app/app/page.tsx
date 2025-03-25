@@ -17,7 +17,7 @@ export default function Home() {
       {/* <nav className="container mx-auto py-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Music className="h-8 w-8 text-purple-500" />
-          <span className="text-2xl font-bold">WaveStream</span>
+          <span className="text-2xl font-bold">Moozer</span>
         </div>
         <div className="hidden md:flex gap-6 font-medium">
           <a href="#features" className="hover:text-purple-400 transition-colors">Features</a>
@@ -63,7 +63,7 @@ export default function Home() {
               <div className="relative bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
                 <img 
                   src="https://imgs.search.brave.com/BjZYdP1Th3N7uWVdti7g8Cc3GVEyMjOKAtSVUE0l1xc/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90dW5l/dGFuay5pbWdpeC5u/ZXQvYWNvdXN0aWMu/anBnP2F1dG89Zm9y/bWF0Jml4bGliPXJl/YWN0LTkuMTAuMCZo/PTUxMiZ3PTUxMg" 
-                  alt="WaveStream App Interface" 
+                  alt="Moozer App Interface" 
                   className="w-full h-auto rounded-t-xl"
                 />
                 <div className="p-6 space-y-3">
@@ -95,7 +95,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">The Best Way to Discover Music</h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              WaveStream combines community curation with powerful streaming technology
+              Moozer combines community curation with powerful streaming technology
             </p>
           </div>
           
@@ -180,7 +180,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">What Our Users Say</h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Join thousands of music enthusiasts who have found their sound on WaveStream
+              Join thousands of music enthusiasts who have found their sound on Moozer
             </p>
           </div>
           
@@ -189,7 +189,7 @@ export default function Home() {
               {
                 name: "Alex M.",
                 role: "Music Producer",
-                text: "WaveStream has completely changed how I discover new music. The upvoting system ensures quality tracks rise to the top."
+                text: "Moozer has completely changed how I discover new music. The upvoting system ensures quality tracks rise to the top."
               },
               {
                 name: "Sarah K.",
@@ -333,7 +333,7 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-0">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div>
-              <h4 className="font-bold text-lg mb-4">WaveStream</h4>
+              <h4 className="font-bold text-lg mb-4">Moozer</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
@@ -373,10 +373,10 @@ export default function Home() {
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
               <Music className="h-6 w-6 text-purple-500" />
-              <span className="text-xl font-bold">WaveStream</span>
+              <span className="text-xl font-bold">Moozer</span>
             </div>
             <div className="text-gray-400 text-sm">
-              © 2025 WaveStream. All rights reserved.
+              © 2025 Moozer. All rights reserved.
             </div>
             <div className="flex gap-4 mt-4 md:mt-0">
               <Button variant="ghost" size="icon" className="rounded-full">
