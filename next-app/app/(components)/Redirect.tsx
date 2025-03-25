@@ -14,9 +14,6 @@ export default function Redirect() {
             router.push("/dashboard")
         }
     }, [session])
-    // if(session.status==="authenticated") {
-    //     router.push("/dashboard")
-    // }
 
   return null;
 }
