@@ -71,3 +71,4 @@ export const authOptions = {
         }
     }
 }
+/*If using prisma adapter, this callback logic is not needed at all until the user want role based auth*/
