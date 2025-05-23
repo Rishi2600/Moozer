@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prismaClient } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 //@ts-ignore
 import youtubesearchapi from "youtube-search-api";
@@ -41,7 +41,7 @@ export async function POST (req: NextRequest) {
 
         thumbnails.sort((a: {width: number}, b: {width: number}) => a.width < b.width ? -1 : 1)
 
-        const stream = await prismaClient.stream.create({
+        const stream = await prisma.stream.create({
             data: {
                 userId: data.creatorId,
                 url: data.url,
@@ -74,7 +74,7 @@ export async function GET (req: NextRequest) {
     //the way to pass some data via query params
     const creatorId = req.nextUrl.searchParams.get("creatorId");
     
-    const streams = await prismaClient.stream.findMany({
+    const streams = await prisma.stream.findMany({
         where: {
             userId: creatorId ?? ""
         }

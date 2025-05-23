@@ -1,4 +1,4 @@
-import { prismaClient } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
         });
     }
 
-    const user = await prismaClient.user.findUnique({
+    const user = await prisma.user.findUnique({
         where: { email }
     });
 

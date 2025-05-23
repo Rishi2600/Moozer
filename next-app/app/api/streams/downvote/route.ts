@@ -1,4 +1,4 @@
-import { prismaClient } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     //here we are checking the authentication of the user
     const session = await getServerSession()
     
-    const user = await prismaClient.user.findFirst({
+    const user = await prisma.user.findFirst({
         where: {
             email: session?.user?.email ?? ""
         }
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     //here, this is the logic of the endpoint
     try{
         const data = CreateDownvoteSchema.parse(await req.json())
-        await prismaClient.upvote.delete({
+        await prisma.upvote.delete({
             where: {
                 UserId_StreamId: {
                     UserId: user.id,
