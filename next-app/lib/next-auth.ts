@@ -49,25 +49,25 @@ export const authOptions = {
                 }
             }
         })
-    ]
-    // callbacks: {
-    //     async signIn(params: any) {
-    //         console.log(params);
-    //         if(!params.user.email) {
-    //             return false;
-    //         }
+    ],
+    callbacks: {
+        async signIn(params: any) {
+            console.log(params);
+            if(!params.user.email) {
+                return false;
+            }
 
-    //         try {
-    //             await prismaClient.user.create({
-    //                 data: {
-    //                     email: params.user.email,
-    //                     provider: "Google"
-    //                 }
-    //             })
-    //         } catch (e){
-    //             console.log(e);
-    //         }
-    //         return true;
-    //     }
-    // }
+            try {
+                await prisma.user.create({
+                    data: {
+                        email: params.user.email,
+                        provider: "Google"
+                    }
+                })
+            } catch (e){
+                console.log(e);
+            }
+            return true;
+        }
+    }
 }
