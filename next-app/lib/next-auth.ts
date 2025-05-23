@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import { signIn } from "next-auth/react";
 import { prisma } from "./db";
+import { PrismaAdapter } from "@auth/prisma-adapter"
 
 if(!process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_CLIENT_ID) {
     throw new Error("Credentials missing from the google OAuth")
@@ -12,6 +13,7 @@ if(!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
 }
 
 export const authOptions = {
+    adapter: PrismaAdapter(prisma),
     providers: [
         GoogleProvider({
             profile(profile){
