@@ -50,25 +50,25 @@ export const authOptions = {
             }
         })
     ],
-    callbacks: {
-        async signIn(params: any) {
-            console.log(params);
-            if(!params.user.email) {
-                return false;
-            }
+    // callbacks: {
+    //     async signIn(params: any) {
+    //         console.log(params);
+    //         if(!params.user.email) {
+    //             return false;
+    //         }
 
-            try {
-                await prisma.user.create({
-                    data: {
-                        email: params.user.email,
-                        provider: "Google"
-                    }
-                })
-            } catch (e){
-                console.log(e);
-            }
-            return true;
-        }
-    }
+    //         try {
+    //             await prisma.user.create({
+    //                 data: {
+    //                     email: params.user.email,
+    //                     provider: "Google"
+    //                 }
+    //             })
+    //         } catch (e){
+    //             console.log(e);
+    //         }
+    //         return true;
+    //     }
+    // }
 }
 /*If using prisma adapter, this callback logic is not needed at all until the user want role based auth*/
