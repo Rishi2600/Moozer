@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { prisma } from "@moozer/db";
 import { NextRequest, NextResponse } from "next/server";
 // @ts-expect-error youtube-search-api ships no types
 import youtubesearchapi from "youtube-search-api";

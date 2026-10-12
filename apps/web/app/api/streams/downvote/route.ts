@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@moozer/db";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

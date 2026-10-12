@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@moozer/db";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
