@@ -1,61 +1,120 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
-  }
+/*
+ * Vibrant Citrus Groove (see the design system's DESIGN.md).
+ *
+ * Semantic tokens live in :root so a dark theme only has to override them.
+ * The brand palette below keeps DESIGN.md's names, so classes from the Stitch
+ * screens (bg-surface-container, text-orange-electric, ...) work unchanged.
+ */
+:root {
+  --background: #fff8f6;
+  --foreground: #1f140e;
+  --card: #ffffff;
+  --card-foreground: #1f140e;
+  --popover: #ffffff;
+  --popover-foreground: #1f140e;
+
+  --primary: #ff6200;
+  --primary-foreground: #ffffff;
+  --primary-hover: #ff7a1a;
+  --primary-pressed: #d94e00;
+
+  /* Soft button: apricot fill, orange text */
+  --secondary: #ffe9d2;
+  --secondary-foreground: #ff6200;
+  --secondary-hover: #ffdcc6;
+
+  --muted: #fff5eb;
+  --muted-foreground: #6e5d53;
+  --faint-foreground: #b3a398;
+
+  /* Ghost hover */
+  --accent: #fff5eb;
+  --accent-foreground: #ff6200;
+
+  --destructive: #f43f5e;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+
+  --border: #fae3d0;
+  --border-strong: #ffd0a8;
+  --input: #fae3d0;
+  --ring: #ff6200;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@theme {
+  /* Brand palette (DESIGN.md custom names) */
+  --color-orange-electric: #ff6200;
+  --color-orange-glow: #ff7a1a;
+  --color-orange-deep: #d94e00;
+  --color-amber-bright: #ffb340;
+  --color-cream-surface: #fffdfa;
+  --color-cream-subtle: #fff5eb;
+  --color-cream-container: #ffe9d2;
+  --color-ink-primary: #1f140e;
+  --color-ink-secondary: #6e5d53;
+  --color-ink-faint: #b3a398;
+  --color-border-subtle: #fae3d0;
+  --color-border-bold: #ffd0a8;
+  --color-success-emerald: #10b981;
+  --color-destructive-crimson: #f43f5e;
+
+  /* Material-style surface ramp used by the Stitch screens */
+  --color-surface: #fff8f6;
+  --color-surface-dim: #f0d4ca;
+  --color-surface-bright: #fff8f6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fff1ec;
+  --color-surface-container: #ffe9e2;
+  --color-surface-container-high: #ffe2d8;
+  --color-surface-container-highest: #f9ddd2;
+  --color-surface-variant: #f9ddd2;
+  --color-on-surface: #271812;
+  --color-on-surface-variant: #5a4137;
+  --color-inverse-surface: #3d2d26;
+  --color-inverse-on-surface: #ffede7;
+  --color-outline: #8f7065;
+  --color-outline-variant: #e3bfb1;
+  --color-primary-container: #ff6200;
+  --color-on-primary-container: #541b00;
+  --color-primary-fixed: #ffdbcd;
+  --color-primary-fixed-dim: #ffb597;
+  --color-secondary-container: #fe9d19;
+  --color-on-secondary-container: #663b00;
+  --color-tertiary-fixed: #f2e0ca;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
 }
 
 @layer base {
