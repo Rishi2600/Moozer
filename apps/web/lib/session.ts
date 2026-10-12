@@ -17,3 +17,11 @@ export async function requireSession() {
   if (!session) redirect("/sign-in");
   return session;
 }
+
+// Better Auth's default freshAge: some actions (like deleting an account
+// without a password) need a sign-in from the last day.
+const FRESH_AGE_MS = 24 * 60 * 60 * 1000;
+
+export function isSessionFresh(createdAt: Date | string) {
+  return Date.now() - new Date(createdAt).getTime() < FRESH_AGE_MS;
+}

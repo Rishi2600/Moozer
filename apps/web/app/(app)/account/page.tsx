@@ -1,9 +1,10 @@
 import { prisma } from "@moozer/db";
 import type { Metadata } from "next";
 
-import { requireSession } from "@/lib/session";
+import { isSessionFresh, requireSession } from "@/lib/session";
 import { describeUserAgent } from "@/lib/user-agent";
 
+import { DeleteAccountCard } from "./delete-account-card";
 import { ProfileCard } from "./profile-card";
 import { SessionCard } from "./session-card";
 
@@ -25,6 +26,7 @@ export default async function AccountPage() {
       </div>
       <ProfileCard name={user.name} email={user.email} providers={providers} />
       <SessionCard device={describeUserAgent(session.userAgent)} />
+      <DeleteAccountCard hasPassword={providers.includes("credential")} sessionIsFresh={isSessionFresh(session.createdAt)} />
     </div>
   );
 }
