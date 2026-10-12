@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- next dev",
-    "build": "dotenv -e ../../.env -- next build",
-    "start": "dotenv -e ../../.env -- next start",
+    "dev": "dotenv run -q -f ../../.env -- next dev",
+    "build": "dotenv run -q -f ../../.env -- next build",
+    "start": "dotenv run -q -f ../../.env -- next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
@@ -30,7 +30,7 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "dotenv-cli": "^11.0.0",
+    "dotenv": "^18.0.7",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.0",
     "postcss": "^8",

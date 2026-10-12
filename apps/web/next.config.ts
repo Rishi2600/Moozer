@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// Env comes from the repo-root .env, loaded by dotenv-cli in the package scripts.
+// Env comes from the repo-root .env, loaded by `dotenv run` in the package scripts.
 const nextConfig: NextConfig = {
   transpilePackages: ["@moozer/db"],
 };
