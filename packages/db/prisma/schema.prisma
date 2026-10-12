@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,14 +7,80 @@ datasource db {
   provider = "postgresql"
 }
 
+// ---------------------------------------------------------------------------
+// Auth (Better Auth core schema). Better Auth generates the ids.
+// ---------------------------------------------------------------------------
+
 model User {
-  id       String   @id @default(uuid())
-  email    String   @unique
-  name     String?
-  provider Provider
-  streams  Stream[]
-  upvotes  Upvote[]
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  streams       Stream[]
+  upvotes       Upvote[]
+
+  @@map("user")
 }
+
+model Session {
+  id        String   @id
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
+// One row per sign-in method: "google", "github", or "credential" (email +
+// password, with the scrypt hash in `password`).
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+// Short-lived tokens, e.g. password reset links.
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Legacy queue (tutorial-era). Replaced by spaces and queue items in later stages.
+// ---------------------------------------------------------------------------
 
 model Stream {
   id          String     @id @default(uuid())
@@ -33,15 +93,15 @@ model Stream {
   smallImgUrl String     @default("")
   url         String
   extractedId String
-  user        User       @relation(fields: [userId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Upvote {
   id       String @id @default(uuid())
   UserId   String
   StreamId String
-  user     User   @relation(fields: [UserId], references: [id])
-  Stream   Stream @relation(fields: [StreamId], references: [id])
+  user     User   @relation(fields: [UserId], references: [id], onDelete: Cascade)
+  Stream   Stream @relation(fields: [StreamId], references: [id], onDelete: Cascade)
 
   @@unique([UserId, StreamId])
 }
@@ -49,9 +109,4 @@ model Upvote {
 enum StreamType {
   Spotify
   Youtube
-}
-
-enum Provider {
-  Google
-  GitHub
 }
