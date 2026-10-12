@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-//@ts-ignore
+// @ts-expect-error youtube-search-api ships no types
 import youtubesearchapi from "youtube-search-api";
-const YT_REGEX = new RegExp(
-    "/^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtu(?:be)?\.com\/(?:v\/|embed\/|watch(?:\/|\?v=))|youtu\.be\/)((?:\w|-){11})(?:\S+)?$/"
-)
+const YT_REGEX =
+    /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/
 
 const CreateStreamSchema = z.object({
     creatorId: z.string(),
@@ -25,7 +24,7 @@ export async function POST (req: NextRequest) {
         //this is done to find the extractedId & if the link belongs to a certain regex - yt.
         const isYt = data.url.match(YT_REGEX)
         if(!isYt) {
-            NextResponse.json({
+            return NextResponse.json({
                 message: "not a youtube link"
             }, {
                 status: 411

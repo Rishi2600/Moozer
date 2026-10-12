@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-const CreateUpvoteSchema = z.object({
+const CreateDownvoteSchema = z.object({
     streamId: z.string()
 })
 
@@ -27,16 +27,18 @@ export async function POST(req: NextRequest) {
 
     //here, this is the logic of the endpoint
     try{
-        const data = CreateUpvoteSchema.parse(await req.json())
-        await prisma.upvote.create({
-            data: {
-                UserId: user.id,
-                StreamId: data.streamId,
+        const data = CreateDownvoteSchema.parse(await req.json())
+        await prisma.upvote.delete({
+            where: {
+                UserId_StreamId: {
+                    UserId: user.id,
+                    StreamId: data.streamId,   
+                }
             }
         })
-    } catch(e) {
+    } catch {
         return NextResponse.json({
-            message: "error, cannot upvote"
+            message: "error, cannot downvote"
         }, {
             status: 403
         })

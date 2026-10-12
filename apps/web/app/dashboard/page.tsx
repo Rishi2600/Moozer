@@ -2,8 +2,6 @@
 
 import React, { useState } from 'react';
 import { Plus, Home, ThumbsUp } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
 
 const MusicStreamingDashboard = () => {
   const [streamUrl, setStreamUrl] = useState('');
@@ -62,7 +60,7 @@ const MusicStreamingDashboard = () => {
     }
   ]);
 
-  const upvoteSong = (id: any) => {
+  const upvoteSong = (id: number) => {
     setQueue(queue.map(song => 
       song.id === id 
         ? { ...song, upvotes: song.upvotes + 1 } 
@@ -74,8 +72,6 @@ const MusicStreamingDashboard = () => {
     // In a real app, this would validate and process the YouTube URL
     alert(`Stream URL set to: ${streamUrl}`);
   };
-
-  const session = useSession();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">

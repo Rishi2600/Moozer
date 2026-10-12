@@ -1,0 +1,31 @@
+# Private product docs (spec, Stitch prompts, roadmap). Never commit.
+docs
+
+# dependencies
+node_modules
+.pnp
+.pnp.*
+
+# builds
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated Prisma client
+packages/db/src/generated/
+
+# env files (only the example is committed)
+.env*
+!.env.example
+
+# testing
+coverage/
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+.vercel

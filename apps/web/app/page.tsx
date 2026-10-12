@@ -157,7 +157,7 @@ export default function Home() {
               Explore Top Trending <span className="text-purple-500">Streams</span>
             </h2>
             <p className="text-xl text-gray-300">
-              Dive into our most popular music streams curated by our community. From chart-topping hits to underground gems, there's something for everyone.
+              Dive into our most popular music streams curated by our community. From chart-topping hits to underground gems, there&apos;s something for everyone.
             </p>
             <ul className="space-y-4">
               {["Join genre-specific channels", "Follow your favorite content creators", "Create your own stream and build a following"].map((item, i) => (
@@ -204,7 +204,7 @@ export default function Home() {
             ].map((testimonial, index) => (
               <Card key={index} className="bg-gray-900 border-gray-800">
                 <CardContent className="pt-6">
-                  <p className="mb-6 text-gray-300">"{testimonial.text}"</p>
+                  <p className="mb-6 text-gray-300">&ldquo;{testimonial.text}&rdquo;</p>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-500"></div>
                     <div>
