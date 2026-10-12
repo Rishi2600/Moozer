@@ -117,11 +117,85 @@
   --color-on-error-container: #93000a;
 }
 
+@theme {
+  --font-sans: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale: text-<name> sets size, line height, tracking and weight */
+  --text-headline-hero: 56px;
+  --text-headline-hero--line-height: 62px;
+  --text-headline-hero--letter-spacing: -0.03em;
+  --text-headline-hero--font-weight: 800;
+  --text-headline-hero-mobile: 36px;
+  --text-headline-hero-mobile--line-height: 42px;
+  --text-headline-hero-mobile--letter-spacing: -0.02em;
+  --text-headline-hero-mobile--font-weight: 800;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 38px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg-mobile: 24px;
+  --text-headline-lg-mobile--line-height: 30px;
+  --text-headline-lg-mobile--letter-spacing: -0.01em;
+  --text-headline-lg-mobile--font-weight: 700;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 26px;
+  --text-headline-md--font-weight: 700;
+  --text-title-sm: 16px;
+  --text-title-sm--line-height: 22px;
+  --text-title-sm--font-weight: 600;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 22px;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 18px;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--font-weight: 600;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 600;
+  /* Vote counts; pair with tabular-nums */
+  --text-counter-display: 40px;
+  --text-counter-display--line-height: 44px;
+  --text-counter-display--letter-spacing: -0.03em;
+  --text-counter-display--font-weight: 800;
+  --text-counter-ballot: 22px;
+  --text-counter-ballot--line-height: 26px;
+  --text-counter-ballot--font-weight: 700;
+
+  /* Spacing names from DESIGN.md (gap-space-sm, px-margin, ...) */
+  --spacing-space-xs: 0.375rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2.5rem;
+  --spacing-gutter: 1rem;
+  --spacing-gutter-desktop: 1.5rem;
+  --spacing-margin: 1rem;
+  --spacing-margin-desktop: 2rem;
+  --container-page: 1240px;
+
+  /* Corners: lg = buttons and inputs, xl = cards, 2xl = modals and sheets */
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /* Warm, orange-tinted depth */
+  --shadow-sunlit: 0 10px 25px -5px rgb(255 98 0 / 0.12), 0 4px 6px -2px rgb(255 98 0 / 0.05);
+  --shadow-glow: 0 8px 20px rgb(255 98 0 / 0.25);
+  --shadow-voted: 0 6px 16px rgb(255 98 0 / 0.35);
+}
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-body-md text-foreground antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
