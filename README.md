@@ -1,30 +1,28 @@
-Democratic music listening Platform.
- Things to learn (Tech Stacks) - 
+# Moozer
 
-* Next.JS
-* Next-Auth
-* Tailwind & ShadCN
-* Postgres + Prisma
-* Schemas
-* YouTube API / Spotify API
-* Regex
-* WebSockets: Not necessarily needed but can be added as a feature.
+Let the room pick the music. A host starts a space and plays it on a laptop, TV or speaker;
+everyone else joins from their phone with a link or QR code, adds YouTube songs and upvotes
+them. The song with the most votes plays next, and the queue updates live for everyone.
 
-Steps & Architecture
+## Repository
 
-1. Initialize a Next.JS Project
-2. Add NextAuth for Authentication (Google, Credentials)
-3. Create the Schema for User, Space, ActiveStream, StreamHistory
-4. Create endpoints for lets
-  * a user create a space
-  * end users add stream
-  * end users upvote/cancel upvote on stream
-  * Lets everyone fetch the current stream (with their upvote)
-5. Create a WebSocket server where
-  * Users can subscribe to streams (updates on a certain room)
-  * Users get back an update whenever upvotes change
-6. Create the frontend
-  * Landing page
-  * Spaces page
-  * Individual space change
+| Path | What it is |
+|---|---|
+| `apps/web` | Next.js 16 app (pages, API routes, auth) |
+| `apps/realtime` | Node WebSocket server for live votes and presence |
+| `packages/db` | Prisma 7 schema, migrations and the shared database client |
 
+## Run it locally
+
+Needs Node 20.19+ and Docker.
+
+```bash
+cp .env.example .env                       # one env file for every app
+docker compose up -d                       # Postgres 17 on localhost:5432
+npm install
+npm run migrate --workspace=@moozer/db     # apply migrations, generate the client
+npm run dev                                # web on http://localhost:3000
+npm run dev --workspace=@moozer/realtime   # realtime on :8080 (/health)
+```
+
+`npm run verify` runs lint, typecheck and a production build across the workspace.
