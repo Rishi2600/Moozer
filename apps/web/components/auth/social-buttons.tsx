@@ -23,7 +23,7 @@ export function SocialButtons({ next }: { next: string }) {
     const { error } = await authClient.signIn.social({
       provider,
       callbackURL: next,
-      errorCallbackURL: "/sign-in?error=oauth",
+      errorCallbackURL: "/sign-in",
     });
     // On success the browser is already leaving for the provider.
     if (error) {
