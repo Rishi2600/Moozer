@@ -1,13 +1,24 @@
-import { WebSocketServer } from 'ws'
+import { createServer } from "node:http";
+import { WebSocketServer } from "ws";
 
-const wss = new WebSocketServer({ port: 8080 });
+const port = Number(process.env.REALTIME_PORT ?? 8080);
 
-wss.on('connection', function connection(ws) {
-  ws.on('error', console.error);
+// Plain HTTP for health checks; WebSocket connections upgrade on the same port.
+const server = createServer((req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: true, connections: wss.clients.size }));
+    return;
+  }
+  res.writeHead(404).end();
+});
 
-  ws.on('message', function message(data) {
-    console.log('received: %s', data);
-  });
+const wss = new WebSocketServer({ server });
 
-  ws.send('something');
+wss.on("connection", (socket) => {
+  socket.on("error", (err) => console.error("socket error", err));
+});
+
+server.listen(port, () => {
+  console.log(`realtime listening on :${port}`);
 });
