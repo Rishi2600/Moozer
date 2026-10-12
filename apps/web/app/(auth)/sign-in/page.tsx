@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AuthHeading, AuthShell, OrDivider } from "@/components/auth/auth-shell";
 import { FormError } from "@/components/auth/form-error";
+import { FormNotice } from "@/components/auth/form-notice";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { oauthErrorMessage } from "@/lib/auth-errors";
 import { safeNext } from "@/lib/safe-next";
@@ -14,7 +15,7 @@ import { SignInForm } from "./sign-in-form";
 export const metadata: Metadata = { title: "Sign in · Moozer" };
 
 export default async function SignInPage(props: PageProps<"/sign-in">) {
-  const { next, error } = await props.searchParams;
+  const { next, error, reset } = await props.searchParams;
   const destination = safeNext(next);
   if (await getSession()) redirect(destination);
 
@@ -23,6 +24,11 @@ export default async function SignInPage(props: PageProps<"/sign-in">) {
   return (
     <AuthShell>
       <AuthHeading title="Sign in to Moozer" description="Sign in to start a space or vote in one." />
+      {reset === "done" && (
+        <div className="mb-4">
+          <FormNotice>Password updated. Sign in with your new password.</FormNotice>
+        </div>
+      )}
       {typeof error === "string" && (
         <div className="mb-4">
           <FormError>{oauthErrorMessage(error)}</FormError>
