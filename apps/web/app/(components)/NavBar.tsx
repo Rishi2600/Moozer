@@ -1,38 +1,50 @@
-'use client'
+"use client"
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
-import {signIn, signOut, useSession} from "next-auth/react";
-
+// Legacy landing header; the landing page is redesigned in a later stage.
 export default function NavBar() {
+    const { data: session, isPending } = authClient.useSession();
+    const router = useRouter();
 
-    const session = useSession()
-
-    console.log("session is", session)
-    
     return (
-        <>
-        <header className="bg-gray-900 text-gray-100">
-            <nav className="flex justify-between items w-full px-10 py-4">
-                <div className="text-5xl text-gray-200 font-sans font-bold ">Moozer</div>
-                <div className="font-sans font-semibold">
-                    {session.status==="unauthenticated" && <Button variant="ghost" className="text-white hover:text-purple-400 mr-px" 
-                    onClick={()=> {signIn()}}>
-                        Login
-                    </Button>}
-                    {session.status==="unauthenticated" && <Button className="bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-sm " 
-                    onClick={()=> {signIn()}}>
-                        SignUp
-                    </Button>}
-                    {session.status==="authenticated" && <Button className="bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-sm"
-                    onClick={()=> {signOut()}}>
-                        Signout
-                    </Button>}
-                </div>
+        <header className="border-b bg-card">
+            <nav className="mx-auto flex max-w-page items-center justify-between px-margin py-4 md:px-margin-desktop">
+                <Link href="/" aria-label="Moozer home">
+                    <Logo showTagline={false} />
+                </Link>
+                {!isPending && (
+                    <div className="flex items-center gap-space-sm">
+                        {session ? (
+                            <>
+                                <Button variant="ghost" asChild>
+                                    <Link href="/account">Account</Link>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => router.refresh() } })}
+                                >
+                                    Sign out
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="ghost" asChild>
+                                    <Link href="/sign-in">Sign in</Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href="/create-account">Create account</Link>
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                )}
             </nav>
         </header>
-        </>
     )
 }
-//redirecting logic is not yet set,
-//redirecting logic will be set when we use a callbackUrl under the Link tag

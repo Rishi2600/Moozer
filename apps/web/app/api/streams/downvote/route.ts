@@ -1,5 +1,5 @@
 import { prisma } from "@moozer/db";
-import { getServerSession } from "next-auth";
+import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -9,7 +9,7 @@ const CreateDownvoteSchema = z.object({
 
 export async function POST(req: NextRequest) {
     //here we are checking the authentication of the user
-    const session = await getServerSession()
+    const session = await auth.api.getSession({ headers: req.headers })
     
     const user = await prisma.user.findFirst({
         where: {
