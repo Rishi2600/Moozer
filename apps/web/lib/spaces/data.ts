@@ -3,7 +3,7 @@ import "server-only";
 import { Prisma, prisma } from "@moozer/db";
 import { cache } from "react";
 
-import { generateJoinCode, generateSlug } from "./codes";
+import { generateJoinCode, generateSlug, type JoinTarget } from "./codes";
 
 // Slugs and join codes are random; retry on the rare unique-constraint clash.
 async function withFreshLink<T>(name: string, run: (link: { slug: string; joinCode: string }) => Promise<T>) {
@@ -75,8 +75,16 @@ export const openSpace = cache(async (slug: string, userId: string) => {
   return { space, role: space.hostId === userId ? ("host" as const) : ("member" as const) };
 });
 
-export async function findSpaceByCode(joinCode: string) {
-  return prisma.space.findUnique({ where: { joinCode }, select: { slug: true, status: true } });
+// Where "Join with a link" should go, and whether it can: a live space, or
+// an ended one the person was already in.
+export async function resolveJoinTarget(target: JoinTarget, userId: string) {
+  const space = await prisma.space.findUnique({
+    where: target.kind === "slug" ? { slug: target.slug } : { joinCode: target.code },
+    select: { slug: true, status: true, members: { where: { userId }, select: { userId: true } } },
+  });
+  if (!space) return { ok: false as const, reason: "not-found" as const };
+  if (space.status === "ended" && space.members.length === 0) return { ok: false as const, reason: "ended" as const };
+  return { ok: true as const, slug: space.slug };
 }
 
 // Host-only changes: the ownership and live checks are part of the WHERE, so a

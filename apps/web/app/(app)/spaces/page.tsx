@@ -4,6 +4,7 @@ import { listHostedSpaces, listJoinedSpaces } from "@/lib/spaces/data";
 import { requireSession } from "@/lib/session";
 
 import { SpaceRow, SpaceSection } from "./space-list";
+import { JoinSpaceDialog } from "./join-space-dialog";
 import { SpacesEmpty } from "./spaces-empty";
 import { StartSpaceDialog } from "./start-space-dialog";
 
@@ -21,12 +22,20 @@ export default async function SpacesPage() {
           <p className="text-body-md text-muted-foreground">Rooms you host and rooms you&apos;ve joined.</p>
         </div>
         <div className="flex gap-space-sm">
+          <JoinSpaceDialog />
           <StartSpaceDialog />
         </div>
       </div>
 
       {hosted.length === 0 && joined.length === 0 ? (
-        <SpacesEmpty actions={<StartSpaceDialog />} />
+        <SpacesEmpty
+          actions={
+            <>
+              <StartSpaceDialog />
+              <JoinSpaceDialog />
+            </>
+          }
+        />
       ) : (
         <div className="flex flex-col gap-8">
           {hosted.length > 0 && (
