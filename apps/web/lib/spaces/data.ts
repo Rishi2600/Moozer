@@ -4,6 +4,7 @@ import { Prisma, prisma } from "@moozer/db";
 import { cache } from "react";
 
 import { FINISHED } from "@/lib/queue/data";
+import { sortQueue } from "@/lib/queue/order";
 
 import { generateJoinCode, generateSlug, type JoinTarget } from "./codes";
 
@@ -118,4 +119,26 @@ export async function resetSpaceLink(spaceId: string, hostId: string) {
     const { count } = await prisma.space.updateMany({ where: { id: spaceId, hostId, status: "live" }, data: link });
     return count === 1 ? link.slug : null;
   });
+}
+
+// Signed-out preview of a space from its link: only what the room itself
+// shows (nothing personal, no joining).
+export async function getSpacePreview(slug: string) {
+  const space = await prisma.space.findUnique({
+    where: { slug },
+    select: { id: true, name: true, slug: true, status: true, host: { select: { name: true } }, _count: { select: { members: true } } },
+  });
+  if (!space) return null;
+  const [nowPlaying, queued] = await Promise.all([
+    prisma.queueItem.findFirst({
+      where: { spaceId: space.id, status: "playing" },
+      select: { title: true, thumbnailUrl: true, durationSeconds: true, anchorAt: true, pausedAtMs: true, addedBy: { select: { name: true } } },
+    }),
+    prisma.queueItem.findMany({
+      where: { spaceId: space.id, status: "queued" },
+      select: { id: true, title: true, thumbnailUrl: true, addedAt: true, addedBy: { select: { name: true } }, _count: { select: { votes: true } } },
+    }),
+  ]);
+  const queue = sortQueue(queued.map(({ _count, ...q }) => ({ ...q, votes: _count.votes })));
+  return { space, nowPlaying, queue, total: queue.length };
 }
