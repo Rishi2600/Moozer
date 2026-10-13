@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+import { Music, Users } from "lucide-react";
 import Link from "next/link";
 
 import { Badge, BadgeDot } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ type SpaceSummary = {
   endedAt: Date | null;
   _count: { members: number };
   host?: { name: string };
+  queue: { title: string }[]; // the song playing, if any
 };
 
 export function SpaceSection({ title, children, count }: { title: string; count: number; children: React.ReactNode }) {
@@ -52,6 +53,12 @@ export function SpaceRow({ space, actions }: { space: SpaceSummary; actions?: Re
             </span>
           ) : (
             space.endedAt && <span>Ended {timeAgo(space.endedAt)}</span>
+          )}
+          {space.status === "live" && space.queue[0] && (
+            <span className="hidden min-w-0 items-center gap-1 md:flex">
+              <Music className="size-3.5 shrink-0 text-primary" aria-hidden />
+              <span className="max-w-[260px] truncate">{space.queue[0].title}</span>
+            </span>
           )}
         </div>
       </div>

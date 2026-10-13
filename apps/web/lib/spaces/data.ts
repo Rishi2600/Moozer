@@ -35,6 +35,7 @@ const summary = {
   createdAt: true,
   endedAt: true,
   _count: { select: { members: true } },
+  queue: { where: { status: "playing" }, select: { title: true }, take: 1 },
 } satisfies Prisma.SpaceSelect;
 
 // Live first (enum order), then newest.
