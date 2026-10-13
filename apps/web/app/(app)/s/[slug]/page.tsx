@@ -4,6 +4,7 @@ import { NowPlayingCard } from "@/components/queue/now-playing";
 import { AddSongCard } from "@/components/queue/add-song-card";
 import { AddSongSheet } from "@/components/queue/add-song-sheet";
 import { Ballot } from "@/components/queue/ballot";
+import { HostPlayer, PauseButton } from "@/components/queue/host-player";
 import { PlayNextButton } from "@/components/queue/play-next-button";
 import { EndedCard } from "@/components/space/ended-card";
 import { InTheRoomCard } from "@/components/space/presence";
@@ -35,9 +36,13 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
       <div className="flex flex-col gap-gutter-desktop lg:col-span-8">
         <NowPlayingCard
           playing={nowPlaying}
+          media={isHost && nowPlaying ? <HostPlayer spaceId={space.id} playing={nowPlaying} /> : undefined}
           controls={
-            isHost && space.status === "live" ? (
-              <PlayNextButton spaceId={space.id} playing={nowPlaying !== null} queued={queue.length} />
+            isHost ? (
+              <div className="flex items-center gap-2">
+                {nowPlaying && <PauseButton spaceId={space.id} paused={nowPlaying.pausedAtMs !== null} />}
+                <PlayNextButton spaceId={space.id} playing={nowPlaying !== null} queued={queue.length} />
+              </div>
             ) : undefined
           }
           emptyHint={isHost ? "Press Play next to start the top song." : "The host starts the music. Add a song or vote for one meanwhile."}
