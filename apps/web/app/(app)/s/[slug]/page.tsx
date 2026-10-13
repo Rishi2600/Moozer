@@ -5,8 +5,9 @@ import { AddSongCard } from "@/components/queue/add-song-card";
 import { AddSongSheet } from "@/components/queue/add-song-sheet";
 import { Ballot } from "@/components/queue/ballot";
 import { PlayNextButton } from "@/components/queue/play-next-button";
+import { EndedCard } from "@/components/space/ended-card";
 import { InTheRoomCard } from "@/components/space/presence";
-import { getQueue } from "@/lib/queue/data";
+import { getQueue, getSpaceStats } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
 import { openSpace } from "@/lib/spaces/data";
 
@@ -23,8 +24,11 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
   const opened = await openSpace(slug, user.id);
   if (!opened || opened.role === "outsider") return null; // the layout shows why
   const { space, role } = opened;
-  const { nowPlaying, queue } = await getQueue(space.id, user.id);
   const isHost = role === "host";
+  if (space.status === "ended") {
+    return <EndedCard space={space} isHost={isHost} stats={await getSpaceStats(space.id)} />;
+  }
+  const { nowPlaying, queue } = await getQueue(space.id, user.id);
 
   return (
     <div className="grid grid-cols-1 gap-gutter-desktop max-lg:pb-20 lg:grid-cols-12">

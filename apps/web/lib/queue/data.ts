@@ -183,3 +183,12 @@ export async function requeue(itemId: string, userId: string) {
   const { spaceId, sourceId, ...rest } = played;
   return addSong(spaceId, userId, { videoId: sourceId, ...rest });
 }
+
+// For the "This space has ended" card.
+export async function getSpaceStats(spaceId: string) {
+  const [played, voters] = await Promise.all([
+    prisma.queueItem.count({ where: { spaceId, status: "played" } }),
+    prisma.vote.groupBy({ by: ["userId"], where: { queueItem: { spaceId } } }),
+  ]);
+  return { played, voters: voters.length };
+}
