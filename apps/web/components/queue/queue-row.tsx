@@ -29,7 +29,7 @@ export function QueueRow({
 }) {
   const isLeader = leadBy !== undefined;
   return (
-    <li className="flex items-center gap-3 py-3">
+    <li data-flip-id={item.id} className="flex items-center gap-3 bg-card py-3">
       <span
         className={cn(
           "w-8 shrink-0 text-right text-counter-ballot tabular-nums",

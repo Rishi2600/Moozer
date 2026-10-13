@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useOptimistic, useState, useTransition } from "react";
+import { useCallback, useOptimistic, useRef, useState, useTransition } from "react";
 
 import { playNextAction, removeSongAction, voteAction } from "@/app/(app)/s/[slug]/actions";
 import { useLive } from "@/components/space/live";
 import { Toast } from "@/components/ui/toast";
 import { leadMargin, sortQueue } from "@/lib/queue/order";
+import { useFlip } from "@/lib/use-flip";
 
 import { QueueCard } from "./queue-card";
 import { QueueRow, type QueueRowItem } from "./queue-row";
@@ -52,8 +53,10 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
   }
 
   const leadBy = leadMargin(optimistic);
+  const list = useRef<HTMLDivElement>(null);
+  useFlip(list, optimistic.map((item) => item.id).join(","));
   return (
-    <>
+    <div ref={list} className="contents">
       <QueueCard count={optimistic.length}>
         {optimistic.map((item, index) => (
           <QueueRow
@@ -89,6 +92,6 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
           onDismiss={dismiss}
         />
       )}
-    </>
+    </div>
   );
 }

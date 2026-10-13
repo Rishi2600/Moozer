@@ -13,7 +13,7 @@ export function AddSongCard({ spaceId }: { spaceId: string }) {
   const dismiss = useCallback(() => setMessage(null), []);
   const offline = useLive().status === "offline";
   return (
-    <section aria-disabled={offline} className="hidden flex-col gap-space-md rounded-2xl aria-disabled:pointer-events-none aria-disabled:opacity-50 lg:flex border border-border/60 bg-card p-5 shadow-sm">
+    <section inert={offline} data-offline={offline || undefined} className="hidden flex-col gap-space-md rounded-2xl data-offline:opacity-50 lg:flex border border-border/60 bg-card p-5 shadow-sm">
       <h2 className="text-title-sm text-foreground">Add a song</h2>
       <AddSongForm spaceId={spaceId} onDone={setMessage} />
       {message && <Toast message={message} onDismiss={dismiss} />}
