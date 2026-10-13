@@ -3,6 +3,7 @@
 import { useCallback, useOptimistic, useState, useTransition } from "react";
 
 import { playNextAction, removeSongAction, voteAction } from "@/app/(app)/s/[slug]/actions";
+import { useLive } from "@/components/space/live";
 import { Toast } from "@/components/ui/toast";
 import { leadMargin, sortQueue } from "@/lib/queue/order";
 
@@ -20,6 +21,7 @@ type Viewer = { userId: string; isHost: boolean; spaceId: string };
 
 export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVote: boolean; viewer: Viewer }) {
   const [, startTransition] = useTransition();
+  const offline = useLive().status === "offline";
   const [message, setMessage] = useState<Message | null>(null);
   const [optimistic, applyVote] = useOptimistic(items, (current, change: { id: string; voted: boolean }) =>
     sortQueue(
@@ -62,7 +64,7 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
               <VoteButton
                 voted={item.hasVoted}
                 title={item.title}
-                disabled={!canVote}
+                disabled={!canVote || offline}
                 className="max-sm:size-11"
                 onClick={() => vote(item.id, !item.hasVoted)}
               />

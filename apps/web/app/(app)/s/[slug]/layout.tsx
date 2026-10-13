@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { SpaceDeadEnd } from "@/components/space/dead-end";
 import { SpaceLive } from "@/components/space/live";
+import { OfflineBanner } from "@/components/space/offline-banner";
 import { HereCount, PeoplePile } from "@/components/space/presence";
 import { ShareButton } from "@/components/space/share-button";
 import { SpaceTabs } from "@/components/space/space-tabs";
@@ -77,6 +78,7 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
           </div>
           <SpaceTabs slug={space.slug} isHost={role === "host"} />
         </header>
+        <OfflineBanner />
         {children}
       </div>
     </SpaceLive>

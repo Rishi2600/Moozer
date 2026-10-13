@@ -51,6 +51,7 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
       socket = new WebSocket(`${URL_BASE}?ticket=${encodeURIComponent(ticket)}`);
       socket.onopen = () => {
         clearTimeout(offlineTimer);
+        offlineTimer = undefined;
         if (attempt > 0) refresh(); // catch up on anything missed while away
         attempt = 0;
         setState((s) => ({ ...s, status: "live" }));
@@ -74,7 +75,8 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
 
     function scheduleRetry() {
       // Only call it offline if it lasts, so a quick blip doesn't flash a banner.
-      offlineTimer ??= setTimeout(() => setState((s) => ({ ...s, status: "offline" })), 2000);
+      // Presence is unknown while offline, so drop it until the server reports again.
+      offlineTimer ??= setTimeout(() => setState({ status: "offline", here: null, people: [] }), 2000);
       const delay = Math.min(1000 * 2 ** attempt++, 15_000);
       retryTimer = setTimeout(connect, delay);
     }

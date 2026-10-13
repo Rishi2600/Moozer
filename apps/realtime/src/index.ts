@@ -72,9 +72,15 @@ const stopListening = listenForChanges(databaseUrl, ({ spaceId, slug, status }) 
 
 server.listen(port, () => console.log(`realtime: listening on :${port}`));
 
-process.on("SIGTERM", () => {
+// On shutdown, close every connection with 1012 ("service restart") so
+// browsers reconnect at once; wss.close() alone leaves open sockets running.
+function shutdown() {
   clearInterval(heartbeat);
   void stopListening();
+  for (const ws of wss.clients) ws.close(1012, "restarting");
   wss.close();
   server.close(() => process.exit(0));
-});
+  setTimeout(() => process.exit(0), 2000).unref();
+}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
