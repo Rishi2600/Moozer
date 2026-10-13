@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/session";
 import { SPACE_NAME_MAX, cleanSpaceName } from "@/lib/spaces/codes";
-import { renameSpace, resetSpaceLink } from "@/lib/spaces/data";
+import { endSpace, renameSpace, resetSpaceLink } from "@/lib/spaces/data";
 
 export type SettingsState = { error: string } | { saved: true } | null;
 
@@ -28,4 +28,14 @@ export async function resetLinkAction(spaceId: string): Promise<SettingsState> {
   const slug = await resetSpaceLink(spaceId, session.user.id);
   if (!slug) return { error: "Only the host can reset the link, and only while the space is live." };
   redirect(`/s/${slug}/settings`); // the page's own address changed with the link
+}
+
+export async function endSpaceAction(spaceId: string): Promise<SettingsState> {
+  const session = await getSession();
+  if (!session) return { error: "Your session ended. Sign in again to end this space." };
+  if (!(await endSpace(spaceId, session.user.id))) {
+    return { error: "Only the host can end a space, and it may have ended already." };
+  }
+  refresh();
+  return { saved: true };
 }

@@ -4,6 +4,7 @@ import { listHostedSpaces, listJoinedSpaces } from "@/lib/spaces/data";
 import { requireSession } from "@/lib/session";
 
 import { SpaceRow, SpaceSection } from "./space-list";
+import { SpaceRowMenu } from "./space-row-menu";
 import { JoinSpaceDialog } from "./join-space-dialog";
 import { SpacesEmpty } from "./spaces-empty";
 import { StartSpaceDialog } from "./start-space-dialog";
@@ -41,7 +42,7 @@ export default async function SpacesPage() {
           {hosted.length > 0 && (
             <SpaceSection title="Hosted by you" count={hosted.length}>
               {hosted.map((space) => (
-                <SpaceRow key={space.id} space={space} />
+                <SpaceRow key={space.id} space={space} actions={<SpaceRowMenu space={space} />} />
               ))}
             </SpaceSection>
           )}

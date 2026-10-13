@@ -7,6 +7,7 @@ import { requireSession } from "@/lib/session";
 import { formatJoinCode } from "@/lib/spaces/codes";
 import { openSpace } from "@/lib/spaces/data";
 
+import { EndSpaceCard } from "./end-space-card";
 import { InviteCard } from "./invite-card";
 import { NameCard } from "./name-card";
 
@@ -32,6 +33,7 @@ export default async function SpaceSettingsPage({ params }: PageProps<"/s/[slug]
     <div className="flex max-w-[640px] flex-col gap-5">
       <NameCard spaceId={space.id} name={space.name} />
       <InviteCard spaceId={space.id} link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
+      <EndSpaceCard space={{ id: space.id, name: space.name, members: space._count.members }} />
     </div>
   );
 }
