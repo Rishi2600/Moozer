@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { NowPlayingCard } from "@/components/queue/now-playing";
+import { AddSongCard } from "@/components/queue/add-song-card";
 import { Ballot } from "@/components/queue/ballot";
 import { getQueue } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
@@ -31,7 +32,9 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
         />
         <Ballot items={queue} canVote={space.status === "live"} />
       </div>
-      <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools" />
+      <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
+        {space.status === "live" && <AddSongCard spaceId={space.id} />}
+      </aside>
     </div>
   );
 }

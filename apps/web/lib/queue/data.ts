@@ -45,19 +45,35 @@ export async function getQueue(spaceId: string, userId: string) {
 export type QueueView = Awaited<ReturnType<typeof getQueue>>;
 
 // The song already queued (or playing) for this video, if any.
-export async function findActiveCopy(spaceId: string, videoId: string) {
+export async function findActiveCopy(spaceId: string, videoId: string, userId?: string) {
   const item = await prisma.queueItem.findFirst({
     where: { spaceId, source: "youtube", sourceId: videoId, status: { in: ["queued", "playing"] } },
-    select: { id: true, title: true, status: true, _count: { select: { votes: true } } },
+    select: {
+      id: true,
+      title: true,
+      thumbnailUrl: true,
+      status: true,
+      _count: { select: { votes: true } },
+      votes: { where: { userId: userId ?? "" }, select: { userId: true } },
+    },
   });
-  return item && { id: item.id, title: item.title, playing: item.status === "playing", votes: item._count.votes };
+  return (
+    item && {
+      id: item.id,
+      title: item.title,
+      thumbnailUrl: item.thumbnailUrl,
+      playing: item.status === "playing",
+      votes: item._count.votes,
+      hasVoted: item.votes.length > 0,
+    }
+  );
 }
 
 // Adds the song with the adder's vote, unless that video is already in.
 export async function addSong(spaceId: string, userId: string, details: SongDetails) {
   const who = await access(spaceId, userId);
   if (!who?.live) return { status: "forbidden" as const };
-  const existing = await findActiveCopy(spaceId, details.videoId);
+  const existing = await findActiveCopy(spaceId, details.videoId, userId);
   if (existing) return { status: "duplicate" as const, existing };
   try {
     const item = await prisma.queueItem.create({
@@ -77,7 +93,7 @@ export async function addSong(spaceId: string, userId: string, details: SongDeta
   } catch (error) {
     // Someone added the same video a moment ago (partial unique index).
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const copy = await findActiveCopy(spaceId, details.videoId);
+      const copy = await findActiveCopy(spaceId, details.videoId, userId);
       if (copy) return { status: "duplicate" as const, existing: copy };
     }
     throw error;
