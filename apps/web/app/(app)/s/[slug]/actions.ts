@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 
-import { addSong, findActiveCopy, playNext, removeSong, setVote } from "@/lib/queue/data";
+import { addSong, findActiveCopy, playNext, removeSong, requeue, setVote } from "@/lib/queue/data";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
@@ -76,6 +76,16 @@ export async function removeSongAction(itemId: string) {
   if (!(await removeSong(itemId, session.user.id))) {
     return { ok: false as const, error: "Only the host or whoever added a song can remove it." };
   }
+  refresh();
+  return { ok: true as const };
+}
+
+export async function requeueAction(itemId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  const result = await requeue(itemId, session.user.id);
+  if (result.status === "forbidden") return { ok: false as const, error: "Songs can only be added while the space is live." };
+  if (result.status === "duplicate") return { ok: false as const, error: "That song is already in the queue." };
   refresh();
   return { ok: true as const };
 }

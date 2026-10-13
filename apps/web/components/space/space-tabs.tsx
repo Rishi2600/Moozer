@@ -9,6 +9,7 @@ export function SpaceTabs({ slug, isHost }: { slug: string; isHost: boolean }) {
   const pathname = usePathname();
   const tabs = [
     { href: `/s/${slug}`, label: "Queue", active: pathname === `/s/${slug}` },
+    { href: `/s/${slug}/history`, label: "History", active: pathname.startsWith(`/s/${slug}/history`) },
     ...(isHost ? [{ href: `/s/${slug}/settings`, label: "Settings", active: pathname.startsWith(`/s/${slug}/settings`) }] : []),
   ];
   return (
