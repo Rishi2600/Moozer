@@ -5,6 +5,7 @@ import { AddSongCard } from "@/components/queue/add-song-card";
 import { AddSongSheet } from "@/components/queue/add-song-sheet";
 import { Ballot } from "@/components/queue/ballot";
 import { PlayNextButton } from "@/components/queue/play-next-button";
+import { InTheRoomCard } from "@/components/space/presence";
 import { getQueue } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
 import { openSpace } from "@/lib/spaces/data";
@@ -40,6 +41,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
         <Ballot items={queue} canVote={space.status === "live"} viewer={{ userId: user.id, isHost, spaceId: space.id }} />
       </div>
       <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
+        {space.status === "live" && <InTheRoomCard />}
         {space.status === "live" && <AddSongCard spaceId={space.id} />}
       </aside>
       {space.status === "live" && <AddSongSheet spaceId={space.id} />}
