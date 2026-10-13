@@ -23,7 +23,7 @@ export default function NavBar() {
                         {session ? (
                             <>
                                 <Button variant="ghost" asChild>
-                                    <Link href="/account">Account</Link>
+                                    <Link href="/spaces">Spaces</Link>
                                 </Button>
                                 <Button
                                     variant="outline"

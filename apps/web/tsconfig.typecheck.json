@@ -1,0 +1,5 @@
+{
+  "//": "Used by `npm run typecheck`. Same as tsconfig.json but without .next/dev/types, which belong to a running `next dev` and go stale when routes are deleted.",
+  "extends": "./tsconfig.json",
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
+}

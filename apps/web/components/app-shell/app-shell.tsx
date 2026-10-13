@@ -1,4 +1,4 @@
-import { UserRound } from "lucide-react";
+import { LayoutGrid, UserRound } from "lucide-react";
 import Link from "next/link";
 
 import { Logo } from "@/components/logo";
@@ -14,10 +14,13 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
     <div className="min-h-dvh bg-background">
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col justify-between border-r border-border/60 bg-card p-4 md:flex">
         <div className="flex flex-col gap-6">
-          <Link href="/account" className="px-1" aria-label="Moozer">
+          <Link href="/spaces" className="px-1" aria-label="Moozer">
             <Logo />
           </Link>
           <nav className="flex flex-col gap-1.5" aria-label="Main">
+            <NavLink href="/spaces" icon={<LayoutGrid aria-hidden />}>
+              Spaces
+            </NavLink>
             <NavLink href="/account" icon={<UserRound aria-hidden />}>
               Account
             </NavLink>
@@ -27,7 +30,7 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
       </aside>
 
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border/60 bg-card px-margin md:hidden">
-        <Link href="/account" aria-label="Moozer">
+        <Link href="/spaces" aria-label="Moozer">
           <Logo showTagline={false} />
         </Link>
         <UserMenu name={user.name} email={user.email} compact />
