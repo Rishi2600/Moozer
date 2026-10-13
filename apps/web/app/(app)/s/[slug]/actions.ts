@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 
-import { addSong, findActiveCopy, setVote } from "@/lib/queue/data";
+import { addSong, findActiveCopy, playNext, removeSong, setVote } from "@/lib/queue/data";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
@@ -53,6 +53,28 @@ export async function voteAction(itemId: string, voted: boolean) {
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again to vote." };
   if (!(await setVote(itemId, session.user.id, voted))) {
     return { ok: false as const, error: "That song isn't in the queue any more." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// Host only (checked in the transaction). With an itemId this is "Play now".
+export async function playNextAction(spaceId: string, itemId?: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await playNext(spaceId, session.user.id, itemId))) {
+    return { ok: false as const, error: "Only the host can change what's playing, and only while the space is live." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// The host, or whoever added the song.
+export async function removeSongAction(itemId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await removeSong(itemId, session.user.id))) {
+    return { ok: false as const, error: "Only the host or whoever added a song can remove it." };
   }
   refresh();
   return { ok: true as const };

@@ -2,20 +2,23 @@
 
 import { useCallback, useOptimistic, useState, useTransition } from "react";
 
-import { voteAction } from "@/app/(app)/s/[slug]/actions";
+import { playNextAction, removeSongAction, voteAction } from "@/app/(app)/s/[slug]/actions";
 import { Toast } from "@/components/ui/toast";
 import { leadMargin, sortQueue } from "@/lib/queue/order";
 
 import { QueueCard } from "./queue-card";
 import { QueueRow, type QueueRowItem } from "./queue-row";
+import { RowMenu } from "./row-menu";
 import { VoteButton } from "./vote-button";
 
-type BallotItem = QueueRowItem & { addedAt: Date };
+type BallotItem = QueueRowItem & { addedAt: Date; addedById: string };
 type Message = { text: string; undo?: () => void };
 
 // The live ballot: votes apply instantly (re-sorted with the same rules as
 // the server), then the server action saves them and the page refreshes.
-export function Ballot({ items, canVote }: { items: BallotItem[]; canVote: boolean }) {
+type Viewer = { userId: string; isHost: boolean; spaceId: string };
+
+export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVote: boolean; viewer: Viewer }) {
   const [, startTransition] = useTransition();
   const [message, setMessage] = useState<Message | null>(null);
   const [optimistic, applyVote] = useOptimistic(items, (current, change: { id: string; voted: boolean }) =>
@@ -39,6 +42,13 @@ export function Ballot({ items, canVote }: { items: BallotItem[]; canVote: boole
     });
   }
 
+  function act(run: () => Promise<{ ok: boolean; error?: string }>, done: string) {
+    startTransition(async () => {
+      const result = await run();
+      setMessage({ text: result.ok ? done : (result.error ?? "Something didn't work. Try again.") });
+    });
+  }
+
   const leadBy = leadMargin(optimistic);
   return (
     <>
@@ -56,6 +66,16 @@ export function Ballot({ items, canVote }: { items: BallotItem[]; canVote: boole
                 className="max-sm:size-11"
                 onClick={() => vote(item.id, !item.hasVoted)}
               />
+            }
+            menu={
+              canVote && (viewer.isHost || item.addedById === viewer.userId) ? (
+                <RowMenu
+                  title={item.title}
+                  canPlay={viewer.isHost}
+                  onPlayNow={() => act(() => playNextAction(viewer.spaceId, item.id), "Playing now")}
+                  onRemove={() => act(() => removeSongAction(item.id), "Removed from queue")}
+                />
+              ) : undefined
             }
           />
         ))}

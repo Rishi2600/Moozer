@@ -4,6 +4,7 @@ import { NowPlayingCard } from "@/components/queue/now-playing";
 import { AddSongCard } from "@/components/queue/add-song-card";
 import { AddSongSheet } from "@/components/queue/add-song-sheet";
 import { Ballot } from "@/components/queue/ballot";
+import { PlayNextButton } from "@/components/queue/play-next-button";
 import { getQueue } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
 import { openSpace } from "@/lib/spaces/data";
@@ -29,9 +30,14 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
       <div className="flex flex-col gap-gutter-desktop lg:col-span-8">
         <NowPlayingCard
           playing={nowPlaying}
+          controls={
+            isHost && space.status === "live" ? (
+              <PlayNextButton spaceId={space.id} playing={nowPlaying !== null} queued={queue.length} />
+            ) : undefined
+          }
           emptyHint={isHost ? "Press Play next to start the top song." : "The host starts the music. Add a song or vote for one meanwhile."}
         />
-        <Ballot items={queue} canVote={space.status === "live"} />
+        <Ballot items={queue} canVote={space.status === "live"} viewer={{ userId: user.id, isHost, spaceId: space.id }} />
       </div>
       <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
         {space.status === "live" && <AddSongCard spaceId={space.id} />}
