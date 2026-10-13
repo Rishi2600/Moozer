@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   // Type-check builds without .next/dev/types: those belong to a running
   // `next dev` and go stale when a route is deleted.
   typescript: { tsconfigPath: "tsconfig.typecheck.json" },
+  // YouTube thumbnails
+  images: { remotePatterns: [new URL("https://i.ytimg.com/vi/**")] },
 };
 
 export default nextConfig;
