@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/session";
 
 import { SpaceRow, SpaceSection } from "./space-list";
 import { SpacesEmpty } from "./spaces-empty";
+import { StartSpaceDialog } from "./start-space-dialog";
 
 export const metadata: Metadata = { title: "Spaces · Moozer" };
 
@@ -14,13 +15,18 @@ export default async function SpacesPage() {
 
   return (
     <div className="flex max-w-page flex-col gap-space-lg">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-headline-lg-mobile text-foreground md:text-headline-lg">Spaces</h1>
-        <p className="text-body-md text-muted-foreground">Rooms you host and rooms you&apos;ve joined.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-headline-lg-mobile text-foreground md:text-headline-lg">Spaces</h1>
+          <p className="text-body-md text-muted-foreground">Rooms you host and rooms you&apos;ve joined.</p>
+        </div>
+        <div className="flex gap-space-sm">
+          <StartSpaceDialog />
+        </div>
       </div>
 
       {hosted.length === 0 && joined.length === 0 ? (
-        <SpacesEmpty />
+        <SpacesEmpty actions={<StartSpaceDialog />} />
       ) : (
         <div className="flex flex-col gap-8">
           {hosted.length > 0 && (
