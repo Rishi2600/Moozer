@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 
-import { addSong, findActiveCopy, playNext, removeSong, requeue, setVote } from "@/lib/queue/data";
+import { addSong, findActiveCopy, playNext, removeSong, requeue, setPaused, setVote } from "@/lib/queue/data";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
@@ -95,4 +95,24 @@ export async function requeueAction(itemId: string) {
 export async function realtimeTicketAction(spaceId: string) {
   const session = await getSession();
   return session ? issueRealtimeTicket(session.user, spaceId) : null;
+}
+
+// Host only: pause or resume the playing song for everyone.
+export async function setPausedAction(spaceId: string, paused: boolean) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await setPaused(spaceId, session.user.id, paused))) {
+    return { ok: false as const, error: "Only the host can pause or play, and only while a song is playing." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// The host's player reports that a song finished: start the next one.
+export async function songEndedAction(spaceId: string, itemId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const };
+  const ok = await playNext(spaceId, session.user.id, undefined, itemId);
+  if (ok) refresh();
+  return { ok };
 }

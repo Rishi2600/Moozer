@@ -5,6 +5,10 @@ import { Prisma, prisma } from "@moozer/db";
 import type { SongDetails } from "@/lib/songs/lookup";
 
 import { leadMargin, sortQueue } from "./order";
+import { positionMs, resumedAnchor } from "./playback";
+
+// A song that has stopped playing loses its playback position (CHECK constraint).
+export const FINISHED = { status: "played" as const, anchorAt: null, pausedAtMs: null };
 
 const song = {
   id: true,
@@ -30,7 +34,10 @@ async function access(spaceId: string, userId: string) {
 
 export async function getQueue(spaceId: string, userId: string) {
   const [nowPlaying, queued] = await Promise.all([
-    prisma.queueItem.findFirst({ where: { spaceId, status: "playing" }, select: { ...song, startedAt: true } }),
+    prisma.queueItem.findFirst({
+      where: { spaceId, status: "playing" },
+      select: { ...song, startedAt: true, anchorAt: true, pausedAtMs: true },
+    }),
     prisma.queueItem.findMany({
       where: { spaceId, status: "queued" },
       select: { ...song, _count: { select: { votes: true } }, votes: { where: { userId }, select: { userId: true } } },
@@ -134,21 +141,49 @@ export async function removeSong(itemId: string, userId: string) {
 
 // Host only. Moves the playing song to History and starts the chosen song
 // (or the top of the queue). With nothing queued it just finishes the current one.
-export async function playNext(spaceId: string, hostId: string, itemId?: string) {
+// endedItemId (auto-advance): only advance if that song is still the one playing,
+// so two host tabs reporting the same ending can't skip two songs.
+export async function playNext(spaceId: string, hostId: string, itemId?: string, endedItemId?: string) {
   return prisma.$transaction(async (tx) => {
     const space = await tx.space.findFirst({ where: { id: spaceId, hostId, status: "live" }, select: { id: true } });
     if (!space) return false;
+    if (endedItemId) {
+      const current = await tx.queueItem.findFirst({ where: { spaceId, status: "playing" }, select: { id: true } });
+      if (current?.id !== endedItemId) return true; // already moved on
+    }
     const queued = await tx.queueItem.findMany({
       where: { spaceId, status: "queued", ...(itemId ? { id: itemId } : {}) },
       select: { id: true, addedAt: true, _count: { select: { votes: true } } },
     });
     const next = sortQueue(queued.map((q) => ({ id: q.id, addedAt: q.addedAt, votes: q._count.votes })))[0];
     if (itemId && !next) return false;
-    await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: { status: "played" } });
+    await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: FINISHED });
     if (next) {
+      const now = new Date();
       await tx.queueItem.update({
         where: { id: next.id },
-        data: { status: "playing", startedAt: new Date(), finalVotes: next.votes },
+        data: { status: "playing", startedAt: now, finalVotes: next.votes, anchorAt: now, pausedAtMs: null },
+      });
+    }
+    return true;
+  });
+}
+
+// Host only. Pausing freezes the position; resuming moves the anchor forward.
+export async function setPaused(spaceId: string, hostId: string, paused: boolean) {
+  return prisma.$transaction(async (tx) => {
+    const playing = await tx.queueItem.findFirst({
+      where: { spaceId, status: "playing", space: { hostId, status: "live" } },
+      select: { id: true, anchorAt: true, pausedAtMs: true },
+    });
+    if (!playing) return false;
+    const now = Date.now();
+    if (paused && playing.pausedAtMs === null) {
+      await tx.queueItem.update({ where: { id: playing.id }, data: { pausedAtMs: Math.round(positionMs(playing, now)) } });
+    } else if (!paused && playing.pausedAtMs !== null) {
+      await tx.queueItem.update({
+        where: { id: playing.id },
+        data: { anchorAt: resumedAnchor(playing.pausedAtMs, now), pausedAtMs: null },
       });
     }
     return true;

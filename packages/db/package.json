@@ -10,7 +10,7 @@
     "generate": "prisma generate",
     "build": "prisma generate",
     "typecheck": "prisma generate && tsc --noEmit",
-    "migrate": "prisma migrate dev",
+    "migrate": "prisma migrate dev && prisma generate",
     "studio": "prisma studio"
   },
   "dependencies": {

@@ -145,7 +145,8 @@ enum QueueItemStatus {
 
 // A song in a space's queue. Partial unique indexes in the migration: at most
 // one playing song per space, and a video can't be queued twice at once.
-// CHECK: startedAt and finalVotes are set exactly once a song has started.
+// CHECK: startedAt and finalVotes are set exactly once a song has started;
+// anchorAt/pausedAtMs only on the playing song.
 model QueueItem {
   id              String          @id @default(cuid())
   spaceId         String
@@ -162,6 +163,10 @@ model QueueItem {
   addedAt         DateTime        @default(now())
   startedAt       DateTime? // "Played at" in History
   finalVotes      Int? // vote count when it started playing
+  // Playback position for the playing song, shared by every screen:
+  // playing -> position = now - anchorAt; paused -> position = pausedAtMs.
+  anchorAt        DateTime?
+  pausedAtMs      Int?
   votes           Vote[]
 
   @@index([spaceId, status, addedAt])

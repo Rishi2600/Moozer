@@ -3,6 +3,8 @@ import "server-only";
 import { Prisma, prisma } from "@moozer/db";
 import { cache } from "react";
 
+import { FINISHED } from "@/lib/queue/data";
+
 import { generateJoinCode, generateSlug, type JoinTarget } from "./codes";
 
 // Slugs and join codes are random; retry on the rare unique-constraint clash.
@@ -103,7 +105,7 @@ export async function endSpace(spaceId: string, hostId: string) {
       data: { status: "ended", endedAt: new Date() },
     });
     if (count !== 1) return false;
-    await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: { status: "played" } });
+    await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: FINISHED });
     return true;
   });
 }
