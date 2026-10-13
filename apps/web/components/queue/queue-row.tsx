@@ -44,7 +44,7 @@ export function QueueRow({
         {isLeader && (
           <span className="flex items-center gap-2">
             <Badge variant="next" className="border border-border bg-cream-container text-orange-deep">Plays next</Badge>
-            {leadBy && <span className="text-body-sm text-muted-foreground tabular-nums">Leads by {leadBy}</span>}
+            {leadBy && <span className="whitespace-nowrap text-body-sm text-muted-foreground tabular-nums">Leads by {leadBy}</span>}
           </span>
         )}
         <span className="truncate text-body-md font-semibold text-foreground">{item.title}</span>
