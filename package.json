@@ -6,7 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=@moozer/web",
+    "dev": "concurrently --names web,realtime --prefix-colors auto \"npm run dev --workspace=@moozer/web\" \"npm run dev --workspace=@moozer/realtime\"",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
@@ -15,6 +15,9 @@
   },
   "engines": {
     "node": ">=20.19"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   },
   "allowScripts": {
     "sharp@0.33.5": true,

@@ -10,6 +10,7 @@ them. The song with the most votes plays next, and the queue updates live for ev
 |---|---|
 | `apps/web` | Next.js 16 app (pages, API routes, auth) |
 | `apps/realtime` | Node WebSocket server for live votes and presence |
+| `packages/protocol` | Realtime message types and connection tickets, shared by both apps |
 | `packages/db` | Prisma 7 schema, migrations and the shared database client |
 
 ## Run it locally
@@ -21,8 +22,7 @@ cp .env.example .env                       # one env file for every app
 docker compose up -d                       # Postgres 17 on localhost:5432
 npm install
 npm run migrate --workspace=@moozer/db     # apply migrations, generate the client
-npm run dev                                # web on http://localhost:3000
-npm run dev --workspace=@moozer/realtime   # realtime on :8080 (/health)
+npm run dev                                # web on http://localhost:3000 + realtime on :8080
 ```
 
 `npm run verify` runs lint, typecheck and a production build across the workspace.
