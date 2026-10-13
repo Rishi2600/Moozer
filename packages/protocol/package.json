@@ -1,0 +1,14 @@
+{
+  "name": "@moozer/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./messages": "./src/messages.ts",
+    "./ticket": "./src/ticket.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}
