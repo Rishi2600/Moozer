@@ -3,6 +3,7 @@ import { Disc3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/songs/links";
 
+import { ProgressBar } from "./progress-bar";
 import { SongThumb } from "./song-thumb";
 
 type Playing = {
@@ -10,18 +11,32 @@ type Playing = {
   thumbnailUrl: string;
   durationSeconds: number | null;
   addedBy: { name: string };
+  anchorAt: Date | null;
+  pausedAtMs: number | null;
 } | null;
 
-// Large on the host's screen; the controls slot holds Play next.
-// Progress and pause arrive with the player in Stage 5.
-export function NowPlayingCard({ playing, controls, emptyHint }: { playing: Playing; controls?: React.ReactNode; emptyHint: string }) {
+// Large on the host's screen; the controls slot holds Play next and pause.
+// `media` replaces the thumbnail (the host's YouTube player).
+export function NowPlayingCard({
+  playing,
+  controls,
+  media,
+  emptyHint,
+}: {
+  playing: Playing;
+  controls?: React.ReactNode;
+  media?: React.ReactNode;
+  emptyHint: string;
+}) {
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
       {playing ? (
         <>
           <div className="relative">
-            <SongThumb src={playing.thumbnailUrl} sizes="(min-width: 1024px) 720px, 100vw" className="w-full rounded-xl" />
-            <Badge variant="live" className="absolute top-3 left-3 bg-card/90 backdrop-blur-sm">Now playing</Badge>
+            {media ?? <SongThumb src={playing.thumbnailUrl} sizes="(min-width: 1024px) 720px, 100vw" className="w-full rounded-xl" />}
+            <Badge variant="live" className="pointer-events-none absolute top-3 left-3 bg-card/90 backdrop-blur-sm">
+              {playing.pausedAtMs !== null ? "Paused" : "Now playing"}
+            </Badge>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-col gap-0.5">
@@ -36,6 +51,7 @@ export function NowPlayingCard({ playing, controls, emptyHint }: { playing: Play
             </div>
             {controls}
           </div>
+          <ProgressBar anchorAt={playing.anchorAt} pausedAtMs={playing.pausedAtMs} durationSeconds={playing.durationSeconds} />
         </>
       ) : (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
