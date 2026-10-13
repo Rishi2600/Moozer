@@ -7,9 +7,12 @@ import { Ballot } from "@/components/queue/ballot";
 import { HostPlayer, PauseButton } from "@/components/queue/host-player";
 import { PlayNextButton } from "@/components/queue/play-next-button";
 import { EndedCard } from "@/components/space/ended-card";
+import { InviteCard } from "@/components/space/invite-card";
 import { InTheRoomCard } from "@/components/space/presence";
 import { getQueue, getSpaceStats } from "@/lib/queue/data";
+import { getOrigin } from "@/lib/origin";
 import { requireSession } from "@/lib/session";
+import { formatJoinCode } from "@/lib/spaces/codes";
 import { openSpace } from "@/lib/spaces/data";
 
 export async function generateMetadata({ params }: PageProps<"/s/[slug]">): Promise<Metadata> {
@@ -50,6 +53,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
         <Ballot items={queue} canVote={space.status === "live"} viewer={{ userId: user.id, isHost, spaceId: space.id }} />
       </div>
       <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
+        <InviteCard link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
         {space.status === "live" && <InTheRoomCard />}
         {space.status === "live" && <AddSongCard spaceId={space.id} />}
       </aside>
