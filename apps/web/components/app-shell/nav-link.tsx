@@ -5,8 +5,19 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
-export function NavLink({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
-  const active = usePathname().startsWith(href);
+export function NavLink({
+  href,
+  icon,
+  children,
+  alsoActiveOn = [],
+}: {
+  href: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  alsoActiveOn?: string[];
+}) {
+  const pathname = usePathname();
+  const active = [href, ...alsoActiveOn].some((prefix) => pathname.startsWith(prefix));
   return (
     <Link
       href={href}

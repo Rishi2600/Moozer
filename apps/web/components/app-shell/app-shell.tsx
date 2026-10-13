@@ -18,7 +18,7 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
             <Logo />
           </Link>
           <nav className="flex flex-col gap-1.5" aria-label="Main">
-            <NavLink href="/spaces" icon={<LayoutGrid aria-hidden />}>
+            <NavLink href="/spaces" alsoActiveOn={["/s/"]} icon={<LayoutGrid aria-hidden />}>
               Spaces
             </NavLink>
             <NavLink href="/account" icon={<UserRound aria-hidden />}>

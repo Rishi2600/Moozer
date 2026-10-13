@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Prisma, prisma } from "@moozer/db";
+import { cache } from "react";
 
 import { generateJoinCode, generateSlug } from "./codes";
 
@@ -58,7 +59,8 @@ export async function listJoinedSpaces(userId: string) {
 
 // Opening /s/<slug>. The slug is the invite, so opening a live space joins it;
 // an ended space only opens for people who were already in it.
-export async function openSpace(slug: string, userId: string) {
+// cache(): the space layout and its pages share one lookup (and one upsert) per request.
+export const openSpace = cache(async (slug: string, userId: string) => {
   const space = await prisma.space.findUnique({
     where: { slug },
     select: { ...summary, joinCode: true, hostId: true, host: { select: { name: true } } },
@@ -71,7 +73,7 @@ export async function openSpace(slug: string, userId: string) {
 
   await prisma.spaceMember.upsert({ where: key, create: { spaceId: space.id, userId }, update: { lastSeenAt: new Date() } });
   return { space, role: space.hostId === userId ? ("host" as const) : ("member" as const) };
-}
+});
 
 export async function findSpaceByCode(joinCode: string) {
   return prisma.space.findUnique({ where: { joinCode }, select: { slug: true, status: true } });
