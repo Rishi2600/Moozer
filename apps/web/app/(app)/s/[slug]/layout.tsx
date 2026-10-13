@@ -1,4 +1,4 @@
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Tv, Users } from "lucide-react";
 import Link from "next/link";
 
 import { SpaceDeadEnd } from "@/components/space/dead-end";
@@ -8,6 +8,7 @@ import { HereCount, PeoplePile } from "@/components/space/presence";
 import { ShareButton } from "@/components/space/share-button";
 import { SpaceTabs } from "@/components/space/space-tabs";
 import { Badge, BadgeDot } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { timeAgo } from "@/lib/relative-time";
 import { requireSession } from "@/lib/session";
@@ -61,7 +62,17 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
                 <Badge variant="ended">Ended</Badge>
               )}
             </div>
-            {space.status === "live" && <ShareButton slug={space.slug} />}
+            <div className="flex shrink-0 items-center gap-2">
+              {space.status === "live" && role === "host" && (
+                <Button variant="outline" size="sm" asChild className="max-sm:hidden">
+                  <a href={`/s/${space.slug}/display`} target="_blank" rel="noopener">
+                    <Tv aria-hidden />
+                    TV display
+                  </a>
+                </Button>
+              )}
+              {space.status === "live" && <ShareButton slug={space.slug} />}
+            </div>
           </div>
           <div className="flex items-center gap-3 pl-12 text-body-sm text-muted-foreground">
             {role === "member" && <span className="truncate">Hosted by {space.host.name}</span>}
