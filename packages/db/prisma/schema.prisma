@@ -23,8 +23,8 @@ model User {
   accounts      Account[]
   hostedSpaces  Space[]
   memberships   SpaceMember[]
-  streams       Stream[]
-  upvotes       Upvote[]
+  addedSongs    QueueItem[]
+  votes         Vote[]
 
   @@map("user")
 }
@@ -104,6 +104,7 @@ model Space {
   hostId    String
   host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
   members   SpaceMember[]
+  queue     QueueItem[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   endedAt   DateTime?
@@ -127,34 +128,56 @@ model SpaceMember {
 }
 
 // ---------------------------------------------------------------------------
-// Legacy queue (tutorial-era). Replaced by spaces and queue items in later stages.
+// Queue and votes
 // ---------------------------------------------------------------------------
 
-model Stream {
-  id          String     @id @default(uuid())
-  type        StreamType
-  active      Boolean    @default(true)
-  upvotes     Upvote[]
+enum SongSource {
+  youtube
+  spotify
+}
+
+// queued -> playing -> played. Removing a queued song deletes the row.
+enum QueueItemStatus {
+  queued
+  playing
+  played
+}
+
+// A song in a space's queue. Partial unique indexes in the migration: at most
+// one playing song per space, and a video can't be queued twice at once.
+// CHECK: startedAt and finalVotes are set exactly once a song has started.
+model QueueItem {
+  id              String          @id @default(cuid())
+  spaceId         String
+  space           Space           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  addedById       String
+  addedBy         User            @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  source          SongSource      @default(youtube)
+  sourceId        String // YouTube video id
+  title           String
+  channel         String?
+  thumbnailUrl    String
+  durationSeconds Int?
+  status          QueueItemStatus @default(queued)
+  addedAt         DateTime        @default(now())
+  startedAt       DateTime? // "Played at" in History
+  finalVotes      Int? // vote count when it started playing
+  votes           Vote[]
+
+  @@index([spaceId, status, addedAt])
+  @@index([addedById])
+  @@map("queue_item")
+}
+
+// One vote per person per song.
+model Vote {
+  queueItemId String
+  queueItem   QueueItem @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
   userId      String
-  title       String     @default("")
-  bigImgUrl   String     @default("")
-  smallImgUrl String     @default("")
-  url         String
-  extractedId String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
 
-model Upvote {
-  id       String @id @default(uuid())
-  UserId   String
-  StreamId String
-  user     User   @relation(fields: [UserId], references: [id], onDelete: Cascade)
-  Stream   Stream @relation(fields: [StreamId], references: [id], onDelete: Cascade)
-
-  @@unique([UserId, StreamId])
-}
-
-enum StreamType {
-  Spotify
-  Youtube
+  @@id([queueItemId, userId])
+  @@index([userId])
+  @@map("vote")
 }
