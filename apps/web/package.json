@@ -7,7 +7,7 @@
     "build": "dotenv run -q -f ../../.env -- next build",
     "start": "dotenv run -q -f ../../.env -- next start",
     "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "node scripts/clear-dev-types.mjs && next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@moozer/db": "^0.1.0",

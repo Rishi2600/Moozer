@@ -21,6 +21,8 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  hostedSpaces  Space[]
+  memberships   SpaceMember[]
   streams       Stream[]
   upvotes       Upvote[]
 
@@ -76,6 +78,52 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Spaces
+// ---------------------------------------------------------------------------
+
+// Stage 7 adds paused and scheduled.
+enum SpaceStatus {
+  live
+  ended
+}
+
+// A listening room. Its URL (/s/<slug>) is also the invite link, so resetting
+// the link changes the slug; members keep their membership. The join code is
+// what people type from a TV. Both change together on reset.
+// CHECKs in the migration: the name isn't blank, and endedAt is set exactly
+// when the status is ended.
+model Space {
+  id        String        @id @default(cuid())
+  name      String        @db.VarChar(60)
+  slug      String        @unique
+  joinCode  String        @unique @db.Char(6)
+  status    SpaceStatus   @default(live)
+  hostId    String
+  host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  members   SpaceMember[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  endedAt   DateTime?
+
+  @@index([hostId, createdAt])
+  @@map("space")
+}
+
+// Who has joined a space. The host is a member too.
+model SpaceMember {
+  spaceId    String
+  space      Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@id([spaceId, userId])
+  @@index([userId, lastSeenAt])
+  @@map("space_member")
 }
 
 // ---------------------------------------------------------------------------
