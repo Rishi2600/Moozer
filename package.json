@@ -10,7 +10,8 @@
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "verify": "npm run lint && npm run typecheck && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "test": "npm run test --workspaces --if-present"
   },
   "engines": {
     "node": ">=20.19"
