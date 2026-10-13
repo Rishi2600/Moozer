@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 
 import { addSong, findActiveCopy, playNext, removeSong, requeue, setVote } from "@/lib/queue/data";
+import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
@@ -88,4 +89,10 @@ export async function requeueAction(itemId: string) {
   if (result.status === "duplicate") return { ok: false as const, error: "That song is already in the queue." };
   refresh();
   return { ok: true as const };
+}
+
+// A fresh realtime ticket when the browser reconnects.
+export async function realtimeTicketAction(spaceId: string) {
+  const session = await getSession();
+  return session ? issueRealtimeTicket(session.user, spaceId) : null;
 }
