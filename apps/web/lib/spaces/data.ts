@@ -94,12 +94,17 @@ export async function renameSpace(spaceId: string, hostId: string, name: string)
   return count === 1;
 }
 
+// Ending also closes out the song that was playing.
 export async function endSpace(spaceId: string, hostId: string) {
-  const { count } = await prisma.space.updateMany({
-    where: { id: spaceId, hostId, status: "live" },
-    data: { status: "ended", endedAt: new Date() },
+  return prisma.$transaction(async (tx) => {
+    const { count } = await tx.space.updateMany({
+      where: { id: spaceId, hostId, status: "live" },
+      data: { status: "ended", endedAt: new Date() },
+    });
+    if (count !== 1) return false;
+    await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: { status: "played" } });
+    return true;
   });
-  return count === 1;
 }
 
 // New slug and join code together; the old link and code stop working.
