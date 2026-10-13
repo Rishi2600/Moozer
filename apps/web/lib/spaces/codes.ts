@@ -46,6 +46,15 @@ export function generateSlug(name: string) {
   return `${slugify(name)}-${randomString(SLUG_SUFFIX_ALPHABET, 6)}`;
 }
 
+export const SPACE_NAME_MAX = 60;
+
+// Trimmed, single-spaced, 1–60 characters; null if it doesn't fit.
+export function cleanSpaceName(raw: unknown) {
+  if (typeof raw !== "string") return null;
+  const name = raw.trim().replace(/\s+/g, " ");
+  return name.length >= 1 && name.length <= SPACE_NAME_MAX ? name : null;
+}
+
 export type JoinTarget = { kind: "slug"; slug: string } | { kind: "code"; code: string };
 
 // What someone pasted into "Join with a link": a full link, a /s/ path, or a code.

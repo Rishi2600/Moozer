@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   JOIN_CODE_ALPHABET,
+  cleanSpaceName,
   formatJoinCode,
   generateJoinCode,
   generateSlug,
@@ -73,5 +74,18 @@ describe("parseJoinInput", () => {
     expect(parseJoinInput("")).toBeNull();
     expect(parseJoinInput("https://youtube.com/watch?v=abc")).toBeNull();
     expect(parseJoinInput("hello")).toBeNull();
+  });
+});
+
+describe("cleanSpaceName", () => {
+  it("trims and collapses spaces", () => {
+    expect(cleanSpaceName("  Friday   at the studio ")).toBe("Friday at the studio");
+  });
+
+  it("accepts up to 60 characters and rejects blank, longer or non-string input", () => {
+    expect(cleanSpaceName("a".repeat(60))).toHaveLength(60);
+    expect(cleanSpaceName("a".repeat(61))).toBeNull();
+    expect(cleanSpaceName("   ")).toBeNull();
+    expect(cleanSpaceName(null)).toBeNull();
   });
 });
