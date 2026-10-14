@@ -5,10 +5,14 @@ type Change = { slug?: string; status?: SpaceStatus };
 type Room = { members: Set<Member>; pending: Change | null; timer: ReturnType<typeof setTimeout> | null };
 
 // Who's connected to which space, presence, and batched "changed" messages.
+// onCount hears every space's head count as it changes (0 when it empties).
 export class Rooms {
   private rooms = new Map<string, Room>();
 
-  constructor(private batchMs = 100) {}
+  constructor(
+    private batchMs = 100,
+    private onCount: (spaceId: string, here: number) => void = () => {}
+  ) {}
 
   join(spaceId: string, member: Member) {
     const room = this.rooms.get(spaceId) ?? { members: new Set(), pending: null, timer: null };
@@ -23,6 +27,7 @@ export class Rooms {
     if (room.members.size === 0) {
       if (room.timer) clearTimeout(room.timer);
       this.rooms.delete(spaceId);
+      this.onCount(spaceId, 0);
     } else {
       this.broadcastPresence(spaceId);
     }
@@ -60,5 +65,6 @@ export class Rooms {
     const people = this.people(spaceId);
     const message: ServerMessage = { type: "presence", here: people.length, people };
     for (const member of this.rooms.get(spaceId)?.members ?? []) member.send(message);
+    this.onCount(spaceId, people.length);
   }
 }

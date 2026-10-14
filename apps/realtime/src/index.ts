@@ -2,8 +2,10 @@ import { createServer } from "node:http";
 
 import { CLOSE, type ServerMessage } from "@moozer/protocol/messages";
 import { verifyTicket } from "@moozer/protocol/ticket";
+import pg from "pg";
 import { WebSocketServer, type WebSocket } from "ws";
 
+import { CountWriter } from "./counts";
 import { listenForChanges } from "./listen";
 import { Rooms, type Member } from "./rooms";
 
@@ -15,7 +17,19 @@ const allowedOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:3000").split
 if (!secret || secret.length < 32) throw new Error("REALTIME_SECRET must be set (32+ characters). See .env.example.");
 if (!databaseUrl) throw new Error("DATABASE_URL is not set. See .env.example.");
 
-const rooms = new Rooms();
+// Listener counts live in space.listeners. This server is the only writer
+// (one instance), so counts left over from a crash are reset at startup.
+const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
+const counts = new CountWriter(async (changed) => {
+  await pool.query(
+    `UPDATE space SET listeners = c.n FROM unnest($1::text[], $2::int[]) AS c(id, n) WHERE space.id = c.id`,
+    [[...changed.keys()], [...changed.values()]]
+  );
+});
+const resetCounts = () => pool.query("UPDATE space SET listeners = 0 WHERE listeners <> 0");
+resetCounts().catch((err) => console.error("realtime: couldn't reset listener counts", err.message));
+
+const rooms = new Rooms(100, (spaceId, here) => counts.set(spaceId, here));
 
 // Plain HTTP for health checks; WebSocket connections upgrade on the same port.
 const server = createServer((req, res) => {
@@ -74,13 +88,19 @@ server.listen(port, () => console.log(`realtime: listening on :${port}`));
 
 // On shutdown, close every connection with 1012 ("service restart") so
 // browsers reconnect at once; wss.close() alone leaves open sockets running.
+// Nobody is connected afterwards, so every count goes back to 0.
 function shutdown() {
   clearInterval(heartbeat);
   void stopListening();
   for (const ws of wss.clients) ws.close(1012, "restarting");
   wss.close();
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(0), 2000).unref();
+  const exit = () => process.exit(0);
+  server.close(() => {
+    resetCounts()
+      .catch(() => {})
+      .finally(() => pool.end().finally(exit));
+  });
+  setTimeout(exit, 2000).unref();
 }
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);

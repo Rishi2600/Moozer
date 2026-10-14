@@ -47,6 +47,17 @@ describe("Rooms", () => {
     vi.useRealTimers();
   });
 
+  it("reports head counts, including 0 when a space empties", () => {
+    const counts: Array<[string, number]> = [];
+    const rooms = new Rooms(100, (id, here) => counts.push([id, here]));
+    const a1 = member("maya"), a2 = member("maya");
+    rooms.join("s1", a1.m);
+    rooms.join("s1", a2.m);
+    rooms.leave("s1", a1.m);
+    rooms.leave("s1", a2.m);
+    expect(counts).toEqual([["s1", 1], ["s1", 1], ["s1", 1], ["s1", 0]]);
+  });
+
   it("ignores changes for spaces nobody has open and forgets empty rooms", () => {
     const rooms = new Rooms();
     rooms.changed("nobody-here");
