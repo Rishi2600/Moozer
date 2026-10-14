@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { WaveformSvg } from "@/components/brand-mark";
+
 // The card shown when a Moozer link is shared (WhatsApp, Slack, iMessage...).
 export const alt = "Moozer: let the room pick the music";
 export const size = { width: 1200, height: 630 };
@@ -10,8 +12,8 @@ export default function Image() {
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 80, background: "#fff8f6" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <div style={{ width: 96, height: 96, borderRadius: 24, background: "#ff6200", color: "#fff", fontSize: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            ♫
+          <div style={{ width: 96, height: 96, borderRadius: 24, background: "#ff6200", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <WaveformSvg size={56} />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: 56, fontWeight: 800, color: "#1f140e" }}>Moozer</span>

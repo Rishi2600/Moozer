@@ -15,7 +15,7 @@ export function SessionCard({ device }: { device: string }) {
   async function signOut() {
     setPending(true);
     await authClient.signOut();
-    router.replace("/sign-in");
+    router.replace("/"); // signing out goes back to the landing page
     router.refresh();
   }
 

@@ -20,7 +20,7 @@ export function UserMenu({ name, email, compact = false }: { name: string; email
 
   async function signOut() {
     await authClient.signOut();
-    router.replace("/sign-in");
+    router.replace("/"); // signing out goes back to the landing page
     router.refresh();
   }
 
