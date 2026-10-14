@@ -19,17 +19,26 @@ export function Showcase({ qr }: { qr: string }) {
   const [visible, setVisible] = useState(false);
   const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
+  // Which layout is on screen; null until mounted, when CSS picks. Drawing
+  // only that one halves the work on every tick.
+  const [wide, setWide] = useState<boolean | null>(null);
   const { scene, p, jump } = useSceneClock(visible && !paused && !reduced);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(media.matches);
+    const md = window.matchMedia("(min-width: 48rem)");
+    const sync = () => {
+      setReduced(media.matches);
+      setWide(md.matches);
+    };
     sync();
     media.addEventListener("change", sync);
+    md.addEventListener("change", sync);
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.35 });
     if (root.current) observer.observe(root.current);
     return () => {
       media.removeEventListener("change", sync);
+      md.removeEventListener("change", sync);
       observer.disconnect();
     };
   }, []);
@@ -38,21 +47,25 @@ export function Showcase({ qr }: { qr: string }) {
   const film = { scene: current.id, ...filmState(current.id, reduced ? 1 : p) };
   return (
     <div ref={root} className="flex flex-col gap-6" aria-label="A short tour of Moozer" role="region">
-      <ScaledCanvas width={1200} height={675} className="hidden md:block">
-        <div className="relative size-full">
-          <LaptopFrame url={`moozer.app/s/${SPACE_NAME.toLowerCase().replaceAll(" ", "-")}`} className="absolute top-6 left-0 h-[620px] w-[890px]">
-            <HostScreen film={film} qr={qr} sharing={current.id === "share"} />
-          </LaptopFrame>
-          <PhoneFrame className="absolute right-0 bottom-0 h-[600px] w-[290px]">
+      {wide !== false && (
+        <ScaledCanvas width={1200} height={675} className="hidden md:block">
+          <div className="relative size-full">
+            <LaptopFrame url={`moozer.app/s/${SPACE_NAME.toLowerCase().replaceAll(" ", "-")}`} className="absolute top-6 left-0 h-[620px] w-[890px]">
+              <HostScreen film={film} qr={qr} sharing={current.id === "share"} />
+            </LaptopFrame>
+            <PhoneFrame className="absolute right-0 bottom-0 h-[600px] w-[290px]">
+              <PhoneScreen film={film} qr={qr} messageArrived={current.id !== "start" || p > 0.82} />
+            </PhoneFrame>
+          </div>
+        </ScaledCanvas>
+      )}
+      {wide !== true && (
+        <ScaledCanvas width={360} height={640} className="md:hidden">
+          <PhoneFrame className="absolute inset-x-6 top-2 bottom-2">
             <PhoneScreen film={film} qr={qr} messageArrived={current.id !== "start" || p > 0.82} />
           </PhoneFrame>
-        </div>
-      </ScaledCanvas>
-      <ScaledCanvas width={360} height={640} className="md:hidden">
-        <PhoneFrame className="absolute inset-x-6 top-2 bottom-2">
-          <PhoneScreen film={film} qr={qr} messageArrived={current.id !== "start" || p > 0.82} />
-        </PhoneFrame>
-      </ScaledCanvas>
+        </ScaledCanvas>
+      )}
 
       <p aria-live="polite" className="text-center text-headline-md text-foreground md:text-headline-lg-mobile">{current.caption}</p>
       <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
