@@ -7,7 +7,7 @@ import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
-import { openSpaceNow, setSpaceOnBreak } from "@/lib/spaces/data";
+import { openSpaceNow, removeFromSpace, setSpaceOnBreak } from "@/lib/spaces/data";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof findActiveCopy>>>;
 export type Preview =
@@ -135,6 +135,17 @@ export async function openNowAction(spaceId: string) {
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
   if (!(await openSpaceNow(spaceId, session.user.id))) {
     return { ok: false as const, error: "Only the host can open this space, and it may be open already." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// Host only: remove someone for good (their queued songs and votes go too).
+export async function removePersonAction(spaceId: string, userId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await removeFromSpace(spaceId, session.user.id, userId))) {
+    return { ok: false as const, error: "Only the host can remove people, and not themselves." };
   }
   refresh();
   return { ok: true as const };

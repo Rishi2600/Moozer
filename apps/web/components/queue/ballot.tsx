@@ -4,6 +4,7 @@ import { useCallback, useOptimistic, useRef, useState, useTransition } from "rea
 
 import { playNextAction, removeSongAction, voteAction } from "@/app/(app)/s/[slug]/actions";
 import { useLive } from "@/components/space/live";
+import { RemovePersonDialog, type Person } from "@/components/space/remove-person-dialog";
 import { Toast } from "@/components/ui/toast";
 import { leadMargin, sortQueue } from "@/lib/queue/order";
 import { useFlip } from "@/lib/use-flip";
@@ -13,17 +14,18 @@ import { QueueRow, type QueueRowItem } from "./queue-row";
 import { RowMenu } from "./row-menu";
 import { VoteButton } from "./vote-button";
 
-type BallotItem = QueueRowItem & { addedAt: Date; addedById: string };
+type BallotItem = QueueRowItem & { addedAt: Date; addedById: string; addedBy: { name: string } };
 type Message = { text: string; undo?: () => void };
 
 // The live ballot: votes apply instantly (re-sorted with the same rules as
 // the server), then the server action saves them and the page refreshes.
-type Viewer = { userId: string; isHost: boolean; spaceId: string };
+type Viewer = { userId: string; isHost: boolean; spaceId: string; live: boolean };
 
 export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVote: boolean; viewer: Viewer }) {
   const [, startTransition] = useTransition();
   const offline = useLive().status === "offline";
   const [message, setMessage] = useState<Message | null>(null);
+  const [removing, setRemoving] = useState<Person | null>(null);
   const [optimistic, applyVote] = useOptimistic(items, (current, change: { id: string; voted: boolean }) =>
     sortQueue(
       current.map((item) =>
@@ -76,15 +78,21 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
               canVote && (viewer.isHost || item.addedById === viewer.userId) ? (
                 <RowMenu
                   title={item.title}
-                  canPlay={viewer.isHost}
+                  canPlay={viewer.isHost && viewer.live}
                   onPlayNow={() => act(() => playNextAction(viewer.spaceId, item.id), "Playing now")}
                   onRemove={() => act(() => removeSongAction(item.id), "Removed from queue")}
+                  removePerson={
+                    viewer.isHost && item.addedById !== viewer.userId
+                      ? { name: item.addedBy.name, onSelect: () => setRemoving({ id: item.addedById, name: item.addedBy.name }) }
+                      : undefined
+                  }
                 />
               ) : undefined
             }
           />
         ))}
       </QueueCard>
+      {viewer.isHost && <RemovePersonDialog spaceId={viewer.spaceId} person={removing} onClose={() => setRemoving(null)} />}
       {message && (
         <Toast
           message={message.text}

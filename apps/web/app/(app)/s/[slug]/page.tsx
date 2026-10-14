@@ -61,11 +61,11 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
           }
           emptyHint={emptyHint}
         />
-        <Ballot items={queue} canVote viewer={{ userId: user.id, isHost, spaceId: space.id }} />
+        <Ballot items={queue} canVote viewer={{ userId: user.id, isHost, spaceId: space.id, live }} />
       </div>
       <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
         <InviteCard link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
-        <InTheRoomCard />
+        <InTheRoomCard host={isHost ? { spaceId: space.id, userId: user.id } : undefined} />
         <AddSongCard spaceId={space.id} />
       </aside>
       <AddSongSheet spaceId={space.id} />

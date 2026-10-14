@@ -1,11 +1,14 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { UserX, Users } from "lucide-react";
+import { useState } from "react";
 
 import { Avatar } from "@/components/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 import { useLive } from "./live";
+import { RemovePersonDialog, type Person } from "./remove-person-dialog";
 
 // "18 here" once connected; "N joined" until then (and for ended spaces).
 export function HereCount({ joined }: { joined: number }) {
@@ -43,9 +46,10 @@ export function PeoplePile({ max, className }: { max: number; className?: string
   );
 }
 
-// Desktop side panel.
-export function InTheRoomCard() {
-  const { here } = useLive();
+// Desktop side panel. The host can pick anyone else to remove them.
+export function InTheRoomCard({ host }: { host?: { spaceId: string; userId: string } }) {
+  const { here, people } = useLive();
+  const [removing, setRemoving] = useState<Person | null>(null);
   if (here === null) return null;
   return (
     <section className="hidden flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 shadow-sm lg:flex">
@@ -53,7 +57,35 @@ export function InTheRoomCard() {
         <h2 className="text-title-sm text-foreground">In the room</h2>
         <span className="text-label-md text-primary tabular-nums">{here} here</span>
       </div>
-      <PeoplePile max={8} />
+      {host ? (
+        <ul className="flex flex-wrap gap-1.5" aria-label="In the room">
+          {people.map((person) =>
+            person.id === host.userId ? (
+              <li key={person.id} title={`${person.name} (you)`}>
+                <Avatar name={person.name} className="size-8" />
+              </li>
+            ) : (
+              <li key={person.id}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger aria-label={person.name} title={person.name} className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-primary/30">
+                    <Avatar name={person.name} className="size-8" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>{person.name}</DropdownMenuLabel>
+                    <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(person)}>
+                      <UserX aria-hidden />
+                      Remove from space
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </li>
+            )
+          )}
+        </ul>
+      ) : (
+        <PeoplePile max={8} />
+      )}
+      {host && <RemovePersonDialog spaceId={host.spaceId} person={removing} onClose={() => setRemoving(null)} />}
     </section>
   );
 }
