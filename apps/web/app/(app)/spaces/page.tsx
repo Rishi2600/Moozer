@@ -11,7 +11,9 @@ import { StartSpaceDialog } from "./start-space-dialog";
 
 export const metadata: Metadata = { title: "Spaces · Moozer" };
 
-export default async function SpacesPage() {
+export default async function SpacesPage({ searchParams }: PageProps<"/spaces">) {
+  const { start } = await searchParams;
+  const openStart = start === "1"; // from "Start a space" on the landing page
   const { user } = await requireSession();
   const [hosted, joined] = await Promise.all([listHostedSpaces(user.id), listJoinedSpaces(user.id)]);
 
@@ -24,7 +26,7 @@ export default async function SpacesPage() {
         </div>
         <div className="flex gap-space-sm">
           <JoinSpaceDialog />
-          <StartSpaceDialog />
+          <StartSpaceDialog defaultOpen={openStart} />
         </div>
       </div>
 

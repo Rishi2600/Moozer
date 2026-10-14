@@ -2,6 +2,8 @@ import { CircleCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JoinSpaceDialog } from "@/app/(app)/spaces/join-space-dialog";
+import { openSpaceLink } from "@/app/join-actions";
 import { DemoCard } from "@/components/landing/demo-card";
 import { LandingHeader, START_HREF_SIGNED_OUT } from "@/components/landing/landing-header";
 import { Audiences, ClosingBand, HowItWorks, LandingFooter } from "@/components/landing/sections";
@@ -35,6 +37,7 @@ export default async function LandingPage() {
               <Button size="lg" asChild>
                 <Link href={startHref}>Start a space</Link>
               </Button>
+              <JoinSpaceDialog action={openSpaceLink} size="lg" />
             </div>
             <p className="flex items-center gap-1.5 text-body-sm text-faint-foreground">
               <CircleCheck className="size-4 text-success" aria-hidden />

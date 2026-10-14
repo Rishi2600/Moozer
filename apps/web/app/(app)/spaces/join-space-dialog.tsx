@@ -20,15 +20,16 @@ import { Label } from "@/components/ui/label";
 
 import { joinSpace } from "./actions";
 
-export function JoinSpaceDialog() {
+// `action` lets the landing page use a version that works signed out.
+export function JoinSpaceDialog({ action = joinSpace, size }: { action?: typeof joinSpace; size?: "default" | "lg" }) {
   // Controlled so the text survives React's form reset after an error.
   const [target, setTarget] = useState("");
-  const [state, formAction, pending] = useActionState(joinSpace, null);
+  const [state, formAction, pending] = useActionState(action, null);
 
   return (
     <Dialog onOpenChange={(open) => !open && setTarget("")}>
       <DialogTrigger asChild>
-        <Button variant="secondary">
+        <Button variant="secondary" size={size}>
           <Link2 aria-hidden />
           Join with a link
         </Button>

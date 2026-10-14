@@ -142,3 +142,11 @@ export async function getSpacePreview(slug: string) {
   const queue = sortQueue(queued.map(({ _count, ...q }) => ({ ...q, votes: _count.votes })));
   return { space, nowPlaying, queue, total: queue.length };
 }
+
+// Public: where a pasted link or code leads, for the landing page's join box.
+export async function findSpaceForLink(target: JoinTarget) {
+  return prisma.space.findUnique({
+    where: target.kind === "slug" ? { slug: target.slug } : { joinCode: target.code },
+    select: { slug: true, status: true },
+  });
+}

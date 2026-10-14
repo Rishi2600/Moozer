@@ -21,12 +21,12 @@ import { SPACE_NAME_MAX } from "@/lib/spaces/codes";
 
 import { startSpace } from "./actions";
 
-export function StartSpaceDialog() {
+export function StartSpaceDialog({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const [name, setName] = useState("");
   const [state, formAction, pending] = useActionState(startSpace, null);
 
   return (
-    <Dialog onOpenChange={(open) => !open && setName("")}>
+    <Dialog defaultOpen={defaultOpen} onOpenChange={(open) => !open && setName("")}>
       <DialogTrigger asChild>
         <Button>
           <Plus aria-hidden />
