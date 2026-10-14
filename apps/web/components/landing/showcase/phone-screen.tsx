@@ -13,8 +13,27 @@ type Film = ReturnType<typeof filmState>;
 
 // The phone: a guest's side of the story, drawn from the film's state.
 export function PhoneScreen({ film, qr, messageArrived }: { film: Film; qr: string; messageArrived: boolean }) {
-  if (film.phone === "invite") return <Messages arrived={messageArrived} />;
-  if (film.phone === "scan") return <Scanner qr={qr} />;
+  const inRoom = film.phone !== "invite" && film.phone !== "scan";
+  return (
+    <div className="relative size-full">
+      <Layer shown={film.phone === "invite"}><Messages arrived={messageArrived} /></Layer>
+      <Layer shown={film.phone === "scan"}><Scanner qr={qr} scanned={film.scanned} /></Layer>
+      <Layer shown={inRoom}><Room film={film} /></Layer>
+    </div>
+  );
+}
+
+// Every screen stays drawn and the film crossfades between them, so cuts read
+// as one motion and the room's pictures are loaded before it shows.
+function Layer({ shown, children }: { shown: boolean; children: React.ReactNode }) {
+  return (
+    <div inert={!shown} className={cn("absolute inset-0 transition-opacity duration-300 ease-out", shown ? "opacity-100" : "opacity-0")}>
+      {children}
+    </div>
+  );
+}
+
+function Room({ film }: { film: Film }) {
   return (
     <div className="relative flex size-full flex-col gap-3 px-3 pb-3">
       <div className="flex flex-col gap-0.5 px-1">
@@ -74,17 +93,23 @@ function Messages({ arrived }: { arrived: boolean }) {
   );
 }
 
-function Scanner({ qr }: { qr: string }) {
+function Scanner({ qr, scanned }: { qr: string; scanned: boolean }) {
   return (
     <div className="flex size-full flex-col items-center justify-center gap-4 bg-inverse-surface px-6">
-      <div className="relative size-44 rounded-2xl bg-white p-4">
+      <div className={cn("relative size-44 rounded-2xl bg-white p-4 transition-transform duration-300", scanned && "scale-105")}>
         <div className="size-full [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} />
-        <span aria-hidden className="absolute inset-x-3 top-1/2 h-0.5 animate-pulse bg-primary shadow-glow" />
+        {scanned ? (
+          <span aria-hidden className="absolute inset-0 flex animate-in items-center justify-center rounded-2xl bg-white/75 fade-in-0 zoom-in-75">
+            <CircleCheck className="size-14 text-success" />
+          </span>
+        ) : (
+          <span aria-hidden className="absolute inset-x-3 top-1/2 h-0.5 animate-scan bg-primary shadow-glow motion-reduce:animate-none" />
+        )}
         {["top-0 left-0 border-t-4 border-l-4", "top-0 right-0 border-t-4 border-r-4", "bottom-0 left-0 border-b-4 border-l-4", "right-0 bottom-0 border-r-4 border-b-4"].map((c) => (
-          <span key={c} aria-hidden className={cn("absolute size-6 rounded-sm border-primary", c)} />
+          <span key={c} aria-hidden className={cn("absolute size-6 rounded-sm transition-colors duration-300", scanned ? "border-success" : "border-primary", c)} />
         ))}
       </div>
-      <span className="text-label-md text-white/90">Point at the QR code</span>
+      <span className="text-label-md text-white/90">{scanned ? `Opening ${SPACE_NAME}…` : "Point at the QR code"}</span>
     </div>
   );
 }
