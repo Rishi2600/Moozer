@@ -17,7 +17,10 @@ export async function LandingHeader() {
         </Link>
         <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" asChild className="max-sm:hidden">
-            <a href="#how">How it works</a>
+            <Link href="/discover">Discover</Link>
+          </Button>
+          <Button variant="ghost" asChild className="max-sm:hidden">
+            <Link href="/#how">How it works</Link>
           </Button>
           {session ? (
             <>

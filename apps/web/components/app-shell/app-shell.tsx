@@ -1,4 +1,4 @@
-import { LayoutGrid, UserRound } from "lucide-react";
+import { Compass, LayoutGrid, UserRound } from "lucide-react";
 import Link from "next/link";
 
 import { Logo } from "@/components/logo";
@@ -20,6 +20,9 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
           <nav className="flex flex-col gap-1.5" aria-label="Main">
             <NavLink href="/spaces" alsoActiveOn={["/s/"]} icon={<LayoutGrid aria-hidden />}>
               Spaces
+            </NavLink>
+            <NavLink href="/discover" icon={<Compass aria-hidden />}>
+              Discover
             </NavLink>
             <NavLink href="/account" icon={<UserRound aria-hidden />}>
               Account
