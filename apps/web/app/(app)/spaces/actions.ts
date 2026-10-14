@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/session";
 import { SPACE_NAME_MAX, cleanSpaceName, parseJoinInput } from "@/lib/spaces/codes";
+import { parseScheduledFor } from "@/lib/spaces/schedule";
 import { createSpace, resolveJoinTarget } from "@/lib/spaces/data";
 
 export type FormState = { error: string } | null;
@@ -15,7 +16,15 @@ export async function startSpace(_previous: FormState, formData: FormData): Prom
   const name = cleanSpaceName(formData.get("name"));
   if (!name) return { error: `Give your space a name of up to ${SPACE_NAME_MAX} characters.` };
 
-  const { slug } = await createSpace(session.user.id, name);
+  // Present only when "Schedule for later" is on.
+  let opensAt: Date | undefined;
+  if (formData.has("scheduledFor")) {
+    const parsed = parseScheduledFor(formData.get("scheduledFor"));
+    if (!parsed.ok) return { error: parsed.error };
+    opensAt = parsed.date;
+  }
+
+  const { slug } = await createSpace(session.user.id, name, opensAt);
   redirect(`/s/${slug}`);
 }
 

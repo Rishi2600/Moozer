@@ -10,6 +10,7 @@ import { inSpace, openSpace } from "@/lib/spaces/data";
 import { EndSpaceCard } from "./end-space-card";
 import { InviteCard } from "./invite-card";
 import { DetailsCard } from "./details-card";
+import { DiscoverCard } from "./discover-card";
 
 export const metadata: Metadata = { title: "Space settings · Moozer" };
 
@@ -32,6 +33,7 @@ export default async function SpaceSettingsPage({ params }: PageProps<"/s/[slug]
   return (
     <div className="flex max-w-[640px] flex-col gap-5">
       <DetailsCard spaceId={space.id} name={space.name} description={space.description} />
+      <DiscoverCard spaceId={space.id} isPublic={space.isPublic} />
       <InviteCard spaceId={space.id} link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
       <EndSpaceCard space={{ id: space.id, name: space.name, members: space._count.members }} />
     </div>
