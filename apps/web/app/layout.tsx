@@ -9,8 +9,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  // Absolute base for shared-link images; the site's own address.
+  metadataBase: new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
   title: "Moozer",
   description: "Let the room pick the music.",
+  openGraph: { siteName: "Moozer", type: "website" },
 };
 
 export default function RootLayout({
