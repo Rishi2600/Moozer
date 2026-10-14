@@ -5,11 +5,11 @@ import { getOrigin } from "@/lib/origin";
 import { timeAgo } from "@/lib/relative-time";
 import { requireSession } from "@/lib/session";
 import { formatJoinCode } from "@/lib/spaces/codes";
-import { openSpace } from "@/lib/spaces/data";
+import { inSpace, openSpace } from "@/lib/spaces/data";
 
 import { EndSpaceCard } from "./end-space-card";
 import { InviteCard } from "./invite-card";
-import { NameCard } from "./name-card";
+import { DetailsCard } from "./details-card";
 
 export const metadata: Metadata = { title: "Space settings · Moozer" };
 
@@ -17,7 +17,7 @@ export default async function SpaceSettingsPage({ params }: PageProps<"/s/[slug]
   const { slug } = await params;
   const { user } = await requireSession();
   const opened = await openSpace(slug, user.id);
-  if (!opened || opened.role === "outsider") return null; // the layout explains
+  if (!inSpace(opened)) return null; // the layout explains
   if (opened.role !== "host") redirect(`/s/${slug}`);
   const { space } = opened;
 
@@ -31,7 +31,7 @@ export default async function SpaceSettingsPage({ params }: PageProps<"/s/[slug]
 
   return (
     <div className="flex max-w-[640px] flex-col gap-5">
-      <NameCard spaceId={space.id} name={space.name} />
+      <DetailsCard spaceId={space.id} name={space.name} description={space.description} />
       <InviteCard spaceId={space.id} link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
       <EndSpaceCard space={{ id: space.id, name: space.name, members: space._count.members }} />
     </div>

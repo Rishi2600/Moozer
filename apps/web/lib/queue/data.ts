@@ -22,14 +22,19 @@ const song = {
   addedBy: { select: { name: true } },
 } satisfies Prisma.QueueItemSelect;
 
-// Membership (and liveness) of the caller in a space; null if not a member.
+// Songs can be added, voted on and removed in any space that hasn't ended:
+// live, paused (the host's on a break) or scheduled (not open yet). Only a
+// live space plays music.
+const OPEN = { not: "ended" } as const;
+
+// Membership of the caller in a space; null if not a member.
 async function access(spaceId: string, userId: string) {
   const member = await prisma.spaceMember.findUnique({
     where: { spaceId_userId: { spaceId, userId } },
     select: { space: { select: { status: true, hostId: true } } },
   });
   if (!member) return null;
-  return { live: member.space.status === "live", isHost: member.space.hostId === userId };
+  return { open: member.space.status !== "ended", isHost: member.space.hostId === userId };
 }
 
 export async function getQueue(spaceId: string, userId: string) {
@@ -79,7 +84,7 @@ export async function findActiveCopy(spaceId: string, videoId: string, userId?: 
 // Adds the song with the adder's vote, unless that video is already in.
 export async function addSong(spaceId: string, userId: string, details: SongDetails) {
   const who = await access(spaceId, userId);
-  if (!who?.live) return { status: "forbidden" as const };
+  if (!who?.open) return { status: "forbidden" as const };
   const existing = await findActiveCopy(spaceId, details.videoId, userId);
   if (existing) return { status: "duplicate" as const, existing };
   try {
@@ -110,7 +115,7 @@ export async function addSong(spaceId: string, userId: string, details: SongDeta
 // Sets (rather than toggles) the vote, so a double tap can't undo itself.
 export async function setVote(itemId: string, userId: string, voted: boolean) {
   const item = await prisma.queueItem.findFirst({
-    where: { id: itemId, status: "queued", space: { status: "live", members: { some: { userId } } } },
+    where: { id: itemId, status: "queued", space: { status: OPEN, members: { some: { userId } } } },
     select: { id: true },
   });
   if (!item) return false;
@@ -132,7 +137,7 @@ export async function removeSong(itemId: string, userId: string) {
     where: {
       id: itemId,
       status: "queued",
-      space: { status: "live" },
+      space: { status: OPEN },
       OR: [{ addedById: userId }, { space: { hostId: userId } }],
     },
   });
@@ -169,23 +174,34 @@ export async function playNext(spaceId: string, hostId: string, itemId?: string,
   });
 }
 
-// Host only. Pausing freezes the position; resuming moves the anchor forward.
+// Pausing freezes the playing song's position; resuming moves its anchor
+// forward so it carries on from there. Shared by Pause and Take a break.
+export async function setPlayback(tx: Prisma.TransactionClient, spaceId: string, paused: boolean) {
+  const playing = await tx.queueItem.findFirst({
+    where: { spaceId, status: "playing" },
+    select: { id: true, anchorAt: true, pausedAtMs: true },
+  });
+  if (!playing) return;
+  const now = Date.now();
+  if (paused && playing.pausedAtMs === null) {
+    await tx.queueItem.update({ where: { id: playing.id }, data: { pausedAtMs: Math.round(positionMs(playing, now)) } });
+  } else if (!paused && playing.pausedAtMs !== null) {
+    await tx.queueItem.update({
+      where: { id: playing.id },
+      data: { anchorAt: resumedAnchor(playing.pausedAtMs, now), pausedAtMs: null },
+    });
+  }
+}
+
+// Host only, while live and a song is playing.
 export async function setPaused(spaceId: string, hostId: string, paused: boolean) {
   return prisma.$transaction(async (tx) => {
     const playing = await tx.queueItem.findFirst({
       where: { spaceId, status: "playing", space: { hostId, status: "live" } },
-      select: { id: true, anchorAt: true, pausedAtMs: true },
+      select: { id: true },
     });
     if (!playing) return false;
-    const now = Date.now();
-    if (paused && playing.pausedAtMs === null) {
-      await tx.queueItem.update({ where: { id: playing.id }, data: { pausedAtMs: Math.round(positionMs(playing, now)) } });
-    } else if (!paused && playing.pausedAtMs !== null) {
-      await tx.queueItem.update({
-        where: { id: playing.id },
-        data: { anchorAt: resumedAnchor(playing.pausedAtMs, now), pausedAtMs: null },
-      });
-    }
+    await setPlayback(tx, spaceId, paused);
     return true;
   });
 }

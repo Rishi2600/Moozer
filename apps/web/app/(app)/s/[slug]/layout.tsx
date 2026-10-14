@@ -28,6 +28,14 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
     );
   }
   const { space, role } = opened;
+  if (role === "removed") {
+    return (
+      <SpaceDeadEnd
+        title="You were removed from this space"
+        description={`${space.host.name} removed you from ${space.name}, so you can't rejoin it. You can still start your own space.`}
+      />
+    );
+  }
   if (role === "outsider") {
     return (
       <SpaceDeadEnd

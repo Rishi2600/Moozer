@@ -30,6 +30,7 @@ export async function joinSpace(_previous: FormState, formData: FormData): Promi
   const result = await resolveJoinTarget(target, session.user.id);
   if (!result.ok) {
     if (result.reason === "ended") return { error: "That space has ended. Ask the host for a new link." };
+    if (result.reason === "removed") return { error: "The host removed you from that space, so you can't rejoin it." };
     return target.kind === "code"
       ? { error: "No space has that code. Check it and try again." }
       : { error: "That link doesn't work. The host may have reset it; ask them for the new one." };

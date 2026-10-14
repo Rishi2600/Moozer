@@ -13,20 +13,20 @@ import { getQueue, getSpaceStats } from "@/lib/queue/data";
 import { getOrigin } from "@/lib/origin";
 import { requireSession } from "@/lib/session";
 import { formatJoinCode } from "@/lib/spaces/codes";
-import { openSpace } from "@/lib/spaces/data";
+import { inSpace, openSpace } from "@/lib/spaces/data";
 
 export async function generateMetadata({ params }: PageProps<"/s/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const { user } = await requireSession();
   const opened = await openSpace(slug, user.id);
-  return { title: opened && opened.role !== "outsider" ? `${opened.space.name} · Moozer` : "Moozer" };
+  return { title: inSpace(opened) ? `${opened.space.name} · Moozer` : "Moozer" };
 }
 
 export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">) {
   const { slug } = await params;
   const { user } = await requireSession();
   const opened = await openSpace(slug, user.id);
-  if (!opened || opened.role === "outsider") return null; // the layout shows why
+  if (!inSpace(opened)) return null; // the layout shows why
   const { space, role } = opened;
   const isHost = role === "host";
   if (space.status === "ended") {

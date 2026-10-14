@@ -8,7 +8,7 @@ import { SongThumb } from "@/components/queue/song-thumb";
 import { HISTORY_PAGE_SIZE, getHistory } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
 import { formatDuration } from "@/lib/songs/links";
-import { openSpace } from "@/lib/spaces/data";
+import { inSpace, openSpace } from "@/lib/spaces/data";
 import { cn } from "@/lib/utils";
 
 import { RequeueButton } from "./requeue-button";
@@ -20,7 +20,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
   const { page: rawPage } = await searchParams;
   const { user } = await requireSession();
   const opened = await openSpace(slug, user.id);
-  if (!opened || opened.role === "outsider") return null; // the layout explains
+  if (!inSpace(opened)) return null; // the layout explains
   const page = Math.max(1, Number.parseInt(String(rawPage ?? "1"), 10) || 1);
   const history = await getHistory(opened.space.id, user.id, page);
   if (!history) return null;
