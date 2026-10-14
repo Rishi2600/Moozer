@@ -9,6 +9,7 @@ import { LandingHeader, START_HREF_SIGNED_OUT } from "@/components/landing/landi
 import { Audiences, ClosingBand, HowItWorks, LandingFooter } from "@/components/landing/sections";
 import { Showcase } from "@/components/landing/showcase/showcase";
 import { Button } from "@/components/ui/button";
+import { qrSvg } from "@/lib/qr";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -46,7 +47,7 @@ export default async function LandingPage() {
         </section>
         <section className="bg-gradient-to-b from-background via-cream-subtle to-background py-space-lg md:py-space-xl">
           <div className="mx-auto max-w-[1400px] px-margin md:px-margin-desktop">
-            <Showcase />
+            <Showcase qr={await qrSvg("https://moozer.app/s/friday-at-the-studio")} />
           </div>
         </section>
         <HowItWorks />

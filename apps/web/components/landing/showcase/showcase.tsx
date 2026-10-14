@@ -6,13 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 import { LaptopFrame, PhoneFrame, ScaledCanvas } from "./frames";
-import { SCENES, SPACE_NAME } from "./scenes";
+import { HostScreen } from "./host-screen";
+import { SCENES, SPACE_NAME, filmState } from "./scenes";
 import { useSceneClock } from "./use-scene-clock";
 
 // The landing page's product film: a laptop (the host) and a phone (a guest)
 // act out a space, scene by scene, with a caption and a chapter bar. Plays
 // only while on screen; never auto-plays with reduced motion.
-export function Showcase() {
+export function Showcase({ qr }: { qr: string }) {
   const root = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -33,15 +34,15 @@ export function Showcase() {
   }, []);
 
   const current = SCENES[scene];
-  const film = { scene: current.id, p: reduced ? 1 : p };
+  const film = { scene: current.id, ...filmState(current.id, reduced ? 1 : p) };
   return (
     <div ref={root} className="flex flex-col gap-6" aria-label="A short tour of Moozer" role="region">
       <ScaledCanvas width={1200} height={675} className="hidden md:block">
         <div className="relative size-full">
-          <LaptopFrame url={`moozer.app/s/${SPACE_NAME.toLowerCase().replaceAll(" ", "-")}`} className="absolute top-6 left-0 h-[620px] w-[960px]">
-            <div className="p-6 text-title-sm text-muted-foreground">Host view: {film.scene}</div>
+          <LaptopFrame url={`moozer.app/s/${SPACE_NAME.toLowerCase().replaceAll(" ", "-")}`} className="absolute top-6 left-0 h-[620px] w-[890px]">
+            <HostScreen film={film} qr={qr} sharing={current.id === "share"} />
           </LaptopFrame>
-          <PhoneFrame className="absolute right-4 bottom-0 h-[600px] w-[290px]">
+          <PhoneFrame className="absolute right-0 bottom-0 h-[600px] w-[290px]">
             <div className="p-4 text-label-md text-muted-foreground">Guest: {film.scene}</div>
           </PhoneFrame>
         </div>
