@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { DemoCard } from "@/components/landing/demo-card";
 import { LandingHeader, START_HREF_SIGNED_OUT } from "@/components/landing/landing-header";
+import { Audiences, ClosingBand, HowItWorks, LandingFooter } from "@/components/landing/sections";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/session";
 
@@ -20,7 +21,7 @@ export default async function LandingPage() {
     <div className="min-h-dvh bg-background">
       <LandingHeader />
       <main>
-        <section className="mx-auto grid max-w-page items-center gap-space-xl px-margin py-space-xl md:px-margin-desktop lg:grid-cols-2 lg:py-24">
+        <section className="mx-auto grid max-w-page grid-cols-1 items-center gap-space-xl px-margin py-space-xl md:px-margin-desktop lg:grid-cols-2 lg:py-24">
           <div className="flex flex-col items-start">
             <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-cream-subtle px-3 py-1 text-label-sm tracking-wide text-muted-foreground uppercase shadow-sm">
               <span className="size-2 animate-pulse rounded-full bg-primary" aria-hidden />
@@ -42,7 +43,11 @@ export default async function LandingPage() {
           </div>
           <DemoCard />
         </section>
+        <HowItWorks />
+        <Audiences />
+        <ClosingBand startHref={startHref} />
       </main>
+      <LandingFooter />
     </div>
   );
 }
