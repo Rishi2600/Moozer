@@ -55,6 +55,18 @@ export function cleanSpaceName(raw: unknown) {
   return name.length >= 1 && name.length <= SPACE_NAME_MAX ? name : null;
 }
 
+export const SPACE_DESCRIPTION_MAX = 80;
+
+// The optional one-liner under a space's name ("Warm house & melodic grooves").
+// Blank means none (null); undefined means it doesn't fit.
+export function cleanSpaceDescription(raw: unknown) {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") return undefined;
+  const text = raw.trim().replace(/\s+/g, " ");
+  if (!text) return null;
+  return text.length <= SPACE_DESCRIPTION_MAX ? text : undefined;
+}
+
 export type JoinTarget = { kind: "slug"; slug: string } | { kind: "code"; code: string };
 
 // What someone pasted into "Join with a link": a full link, a /s/ path, or a code.
