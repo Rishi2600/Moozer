@@ -82,6 +82,8 @@ export function filmState(scene: SceneId, p: number) {
     elapsed,
     phone,
     pasted,
+    // The scanner finds the code a beat before the room opens.
+    scanned: during("share") && p > 0.28,
     previewReady: during("add") && p > 0.42,
     tapAdd: during("add") && p > 0.62 && p < 0.72,
     tapVote: during("vote") && p > 0.08 && p < 0.16,

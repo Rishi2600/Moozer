@@ -11,7 +11,8 @@ describe("the landing film's script", () => {
   });
 
   it("fills the room while the link is shared", () => {
-    expect(filmState("share", 0.1)).toMatchObject({ here: 1, phone: "scan" });
+    expect(filmState("share", 0.1)).toMatchObject({ here: 1, phone: "scan", scanned: false });
+    expect(filmState("share", 0.35)).toMatchObject({ phone: "scan", scanned: true });
     expect(filmState("share", 1)).toMatchObject({ here: PEOPLE.length, phone: "joined" });
   });
 
