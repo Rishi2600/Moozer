@@ -1,6 +1,7 @@
+import type { SpaceStatus } from "@moozer/protocol/messages";
 import pg from "pg";
 
-type Notice = { spaceId: string; slug?: string; status?: "live" | "ended" };
+type Notice = { spaceId: string; slug?: string; status?: SpaceStatus };
 
 // LISTEN on "space_changes" (sent by database triggers), reconnecting with
 // back-off if the connection drops.

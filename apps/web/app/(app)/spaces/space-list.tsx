@@ -1,7 +1,8 @@
+import type { SpaceStatus } from "@moozer/protocol/messages";
 import { Music, Users } from "lucide-react";
 import Link from "next/link";
 
-import { Badge, BadgeDot } from "@/components/ui/badge";
+import { SpaceStatusBadge } from "@/components/space/status-badge";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/relative-time";
 
@@ -9,7 +10,7 @@ type SpaceSummary = {
   id: string;
   name: string;
   slug: string;
-  status: "live" | "ended";
+  status: SpaceStatus;
   endedAt: Date | null;
   _count: { members: number };
   host?: { name: string };
@@ -35,18 +36,11 @@ export function SpaceRow({ space, actions }: { space: SpaceSummary; actions?: Re
       <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="truncate text-title-sm text-foreground">{space.name}</span>
-          {space.status === "live" ? (
-            <Badge variant="live">
-              <BadgeDot pulse />
-              Live
-            </Badge>
-          ) : (
-            <Badge variant="ended">Ended</Badge>
-          )}
+          <SpaceStatusBadge status={space.status} />
         </div>
         <div className="flex items-center gap-3 text-body-sm text-muted-foreground">
           {space.host && <span className="truncate">Hosted by {space.host.name}</span>}
-          {space.status === "live" ? (
+          {space.status !== "ended" ? (
             <span className="flex items-center gap-1 tabular-nums">
               <Users className="size-3.5 text-faint-foreground" aria-hidden />
               {members === 1 ? "Just you" : `${members} joined`}

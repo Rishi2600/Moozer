@@ -1,5 +1,6 @@
 "use client";
 
+import type { SpaceStatus } from "@moozer/protocol/messages";
 import { CircleStop, Copy, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type Props = { space: { id: string; name: string; slug: string; status: "live" | "ended"; _count: { members: number } } };
+type Props = { space: { id: string; name: string; slug: string; status: SpaceStatus; _count: { members: number } } };
 
 export function SpaceRowMenu({ space }: Props) {
   const [ending, setEnding] = useState(false);
@@ -30,7 +31,7 @@ export function SpaceRowMenu({ space }: Props) {
             <Copy aria-hidden />
             Copy link
           </DropdownMenuItem>
-          {space.status === "live" && (
+          {space.status !== "ended" && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={() => setEnding(true)}>

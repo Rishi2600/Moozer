@@ -1,7 +1,7 @@
-import type { Person, ServerMessage } from "@moozer/protocol/messages";
+import type { Person, ServerMessage, SpaceStatus } from "@moozer/protocol/messages";
 
 export type Member = { userId: string; name: string; send: (message: ServerMessage) => void };
-type Change = { slug?: string; status?: "live" | "ended" };
+type Change = { slug?: string; status?: SpaceStatus };
 type Room = { members: Set<Member>; pending: Change | null; timer: ReturnType<typeof setTimeout> | null };
 
 // Who's connected to which space, presence, and batched "changed" messages.

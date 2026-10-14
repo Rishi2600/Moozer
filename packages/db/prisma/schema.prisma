@@ -12,17 +12,18 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id            String    @id
+  id            String         @id
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String         @unique
+  emailVerified Boolean        @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   sessions      Session[]
   accounts      Account[]
   hostedSpaces  Space[]
   memberships   SpaceMember[]
+  removedFrom   SpaceRemoval[]
   addedSongs    QueueItem[]
   votes         Vote[]
 
@@ -84,32 +85,46 @@ model Verification {
 // Spaces
 // ---------------------------------------------------------------------------
 
-// Stage 7 adds paused and scheduled.
+// live: music can play. paused: the host is on a break (nothing plays; people
+// can still add and vote). scheduled: opens at scheduledFor (people can join
+// and line up songs early). ended: read-only. Order matters: lists sort by it.
 enum SpaceStatus {
   live
+  paused
+  scheduled
   ended
 }
 
 // A listening room. Its URL (/s/<slug>) is also the invite link, so resetting
 // the link changes the slug; members keep their membership. The join code is
 // what people type from a TV. Both change together on reset.
-// CHECKs in the migration: the name isn't blank, and endedAt is set exactly
-// when the status is ended.
+// isPublic lists the space on Discover. listeners is how many people have it
+// open right now, written by the realtime server (0 when it's down).
+// CHECKs in the migrations: the name and description aren't blank, listeners
+// isn't negative, and endedAt / pausedAt / scheduledFor are set exactly when
+// the status is ended / paused / scheduled.
 model Space {
-  id        String        @id @default(cuid())
-  name      String        @db.VarChar(60)
-  slug      String        @unique
-  joinCode  String        @unique @db.Char(6)
-  status    SpaceStatus   @default(live)
-  hostId    String
-  host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  members   SpaceMember[]
-  queue     QueueItem[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  endedAt   DateTime?
+  id           String         @id @default(cuid())
+  name         String         @db.VarChar(60)
+  description  String?        @db.VarChar(80)
+  slug         String         @unique
+  joinCode     String         @unique @db.Char(6)
+  status       SpaceStatus    @default(live)
+  isPublic     Boolean        @default(false)
+  listeners    Int            @default(0)
+  hostId       String
+  host         User           @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  members      SpaceMember[]
+  removed      SpaceRemoval[]
+  queue        QueueItem[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  endedAt      DateTime?
+  pausedAt     DateTime?
+  scheduledFor DateTime?
 
   @@index([hostId, createdAt])
+  @@index([status, isPublic])
   @@map("space")
 }
 
@@ -125,6 +140,19 @@ model SpaceMember {
   @@id([spaceId, userId])
   @@index([userId, lastSeenAt])
   @@map("space_member")
+}
+
+// People the host removed from a space; they can't rejoin it.
+model SpaceRemoval {
+  spaceId   String
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([spaceId, userId])
+  @@index([userId])
+  @@map("space_removal")
 }
 
 // ---------------------------------------------------------------------------
