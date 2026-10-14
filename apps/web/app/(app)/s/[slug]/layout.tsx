@@ -1,13 +1,15 @@
 import { ArrowLeft, Tv, Users } from "lucide-react";
 import Link from "next/link";
 
+import { BreakButton } from "@/components/space/break-button";
 import { SpaceDeadEnd } from "@/components/space/dead-end";
 import { SpaceLive } from "@/components/space/live";
 import { OfflineBanner } from "@/components/space/offline-banner";
 import { HereCount, PeoplePile } from "@/components/space/presence";
 import { ShareButton } from "@/components/space/share-button";
 import { SpaceTabs } from "@/components/space/space-tabs";
-import { Badge, BadgeDot } from "@/components/ui/badge";
+import { SpaceStatusBadge } from "@/components/space/status-badge";
+import { StatusBanner } from "@/components/space/status-banner";
 import { Button } from "@/components/ui/button";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { timeAgo } from "@/lib/relative-time";
@@ -46,7 +48,8 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
   }
 
   const members = space._count.members;
-  const ticket = space.status === "live" ? await issueRealtimeTicket(user, space.id) : null;
+  const open = space.status !== "ended"; // live, on a break, or not open yet
+  const ticket = open ? await issueRealtimeTicket(user, space.id) : null;
   return (
     <SpaceLive spaceId={space.id} slug={space.slug} ticket={ticket}>
       <div className="flex max-w-page flex-col gap-space-lg">
@@ -61,17 +64,11 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
                 <ArrowLeft className="size-4" aria-hidden />
               </Link>
               <h1 className="truncate text-headline-md text-foreground">{space.name}</h1>
-              {space.status === "live" ? (
-                <Badge variant="live">
-                  <BadgeDot pulse />
-                  Live
-                </Badge>
-              ) : (
-                <Badge variant="ended">Ended</Badge>
-              )}
+              <SpaceStatusBadge status={space.status} />
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {space.status === "live" && role === "host" && (
+              {space.status === "live" && role === "host" && <BreakButton spaceId={space.id} />}
+              {(space.status === "live" || space.status === "paused") && role === "host" && (
                 <Button variant="outline" size="sm" asChild className="max-sm:hidden">
                   <a href={`/s/${space.slug}/display`} target="_blank" rel="noopener">
                     <Tv aria-hidden />
@@ -79,12 +76,12 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
                   </a>
                 </Button>
               )}
-              {space.status === "live" && <ShareButton slug={space.slug} />}
+              {open && <ShareButton slug={space.slug} />}
             </div>
           </div>
           <div className="flex items-center gap-3 pl-12 text-body-sm text-muted-foreground">
             {role === "member" && <span className="truncate">Hosted by {space.host.name}</span>}
-            {space.status === "live" ? (
+            {open ? (
               <HereCount joined={members} />
             ) : (
               <span className="flex items-center gap-1 tabular-nums">
@@ -93,10 +90,11 @@ export default async function SpaceLayout({ children, params }: LayoutProps<"/s/
               </span>
             )}
             {space.endedAt && <span>Ended {timeAgo(space.endedAt)}</span>}
-            {space.status === "live" && <PeoplePile max={3} className="ml-auto lg:hidden" />}
+            {open && <PeoplePile max={3} className="ml-auto lg:hidden" />}
           </div>
           <SpaceTabs slug={space.slug} isHost={role === "host"} />
         </header>
+        <StatusBanner spaceId={space.id} status={space.status} isHost={role === "host"} hostName={space.host.name} scheduledFor={space.scheduledFor} />
         <OfflineBanner />
         {children}
       </div>

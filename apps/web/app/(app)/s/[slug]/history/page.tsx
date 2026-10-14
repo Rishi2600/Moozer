@@ -24,7 +24,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
   const page = Math.max(1, Number.parseInt(String(rawPage ?? "1"), 10) || 1);
   const history = await getHistory(opened.space.id, user.id, page);
   if (!history) return null;
-  const canRequeue = opened.space.status === "live";
+  const canRequeue = opened.space.status !== "ended";
   const first = (page - 1) * HISTORY_PAGE_SIZE + 1;
 
   return (

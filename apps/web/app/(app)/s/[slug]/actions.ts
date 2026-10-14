@@ -7,6 +7,7 @@ import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
+import { openSpaceNow, setSpaceOnBreak } from "@/lib/spaces/data";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof findActiveCopy>>>;
 export type Preview =
@@ -42,7 +43,7 @@ export async function addSongAction(spaceId: string, videoId: string) {
   const found = await lookupYouTube(videoId); // never trust song details from the browser
   if (!found.ok) return { ok: false as const, error: LOOKUP_ERRORS[found.reason] };
   const result = await addSong(spaceId, session.user.id, found.song);
-  if (result.status === "forbidden") return { ok: false as const, error: "Only people in a live space can add songs." };
+  if (result.status === "forbidden") return { ok: false as const, error: "Songs can only be added until the space ends." };
   if (result.status === "duplicate") return { ok: false as const, error: `${result.existing.title} is already in the queue.` };
   refresh();
   return { ok: true as const };
@@ -85,7 +86,7 @@ export async function requeueAction(itemId: string) {
   const session = await getSession();
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
   const result = await requeue(itemId, session.user.id);
-  if (result.status === "forbidden") return { ok: false as const, error: "Songs can only be added while the space is live." };
+  if (result.status === "forbidden") return { ok: false as const, error: "Songs can only be added until the space ends." };
   if (result.status === "duplicate") return { ok: false as const, error: "That song is already in the queue." };
   refresh();
   return { ok: true as const };
@@ -115,4 +116,26 @@ export async function songEndedAction(spaceId: string, itemId: string) {
   const ok = await playNext(spaceId, session.user.id, undefined, itemId);
   if (ok) refresh();
   return { ok };
+}
+
+// Host only: take a break (the music stops where it is) or come back.
+export async function setBreakAction(spaceId: string, onBreak: boolean) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await setSpaceOnBreak(spaceId, session.user.id, onBreak))) {
+    return { ok: false as const, error: onBreak ? "Only the host can take a break, and only while the space is live." : "Only the host can resume this space." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// Host only: open a scheduled space before its time.
+export async function openNowAction(spaceId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await openSpaceNow(spaceId, session.user.id))) {
+    return { ok: false as const, error: "Only the host can open this space, and it may be open already." };
+  }
+  refresh();
+  return { ok: true as const };
 }

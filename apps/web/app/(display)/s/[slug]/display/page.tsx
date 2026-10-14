@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { SongThumb } from "@/components/queue/song-thumb";
 import { SpaceLive } from "@/components/space/live";
-import { Badge, BadgeDot } from "@/components/ui/badge";
+import { OpensAt } from "@/components/local-time";
+import { SpaceStatusBadge } from "@/components/space/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { getOrigin } from "@/lib/origin";
 import { qrSvg } from "@/lib/qr";
 import { getQueue } from "@/lib/queue/data";
@@ -24,7 +26,7 @@ export default async function TvDisplayPage({ params }: PageProps<"/s/[slug]/dis
   const { slug } = await params;
   const { user } = await requireSession();
   const opened = await openSpace(slug, user.id);
-  if (!opened || opened.role !== "host" || opened.space.status !== "live") redirect(`/s/${slug}`);
+  if (!opened || opened.role !== "host" || opened.space.status === "ended") redirect(`/s/${slug}`);
   const { space } = opened;
   const [{ nowPlaying, queue, leadBy }, ticket, origin] = await Promise.all([
     getQueue(space.id, user.id),
@@ -39,9 +41,13 @@ export default async function TvDisplayPage({ params }: PageProps<"/s/[slug]/dis
       <div className="flex h-dvh flex-col gap-6 overflow-hidden bg-background p-8 xl:p-10">
         <header className="flex items-center justify-between gap-6">
           <div className="flex min-w-0 items-center gap-5">
-            <Badge variant="live" className="px-4 py-1.5 text-title-sm"><BadgeDot pulse />Live</Badge>
+            <SpaceStatusBadge status={space.status} className="px-4 py-1.5 text-title-sm [&>span]:size-2.5" />
             <h1 className="truncate text-headline-lg text-foreground">{space.name}</h1>
             <span className="text-headline-md text-muted-foreground"><HereCount joined={space._count.members} /></span>
+            {space.status === "paused" && <span className="text-headline-md text-primary">On a break: keep adding songs</span>}
+            {space.status === "scheduled" && space.scheduledFor && (
+              <span className="text-headline-md text-primary">Opens <OpensAt date={space.scheduledFor} /></span>
+            )}
           </div>
           <Logo />
         </header>

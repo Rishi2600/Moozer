@@ -33,6 +33,17 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
     return <EndedCard space={space} isHost={isHost} stats={await getSpaceStats(space.id)} />;
   }
   const { nowPlaying, queue } = await getQueue(space.id, user.id);
+  const live = space.status === "live"; // paused and scheduled spaces don't play
+  const emptyHint =
+    space.status === "scheduled"
+      ? "The music starts once the space opens. Add songs and vote meanwhile."
+      : space.status === "paused"
+        ? isHost
+          ? "After you resume, Play next starts the top song."
+          : "Add a song or vote for one meanwhile."
+        : isHost
+          ? "Press Play next to start the top song."
+          : "The host starts the music. Add a song or vote for one meanwhile.";
 
   return (
     <div className="grid grid-cols-1 gap-gutter-desktop max-lg:pb-20 lg:grid-cols-12">
@@ -41,23 +52,23 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
           playing={nowPlaying}
           media={isHost && nowPlaying ? <HostPlayer spaceId={space.id} playing={nowPlaying} /> : undefined}
           controls={
-            isHost ? (
+            isHost && live ? (
               <div className="flex items-center gap-2">
                 {nowPlaying && <PauseButton spaceId={space.id} paused={nowPlaying.pausedAtMs !== null} />}
                 <PlayNextButton spaceId={space.id} playing={nowPlaying !== null} queued={queue.length} />
               </div>
             ) : undefined
           }
-          emptyHint={isHost ? "Press Play next to start the top song." : "The host starts the music. Add a song or vote for one meanwhile."}
+          emptyHint={emptyHint}
         />
-        <Ballot items={queue} canVote={space.status === "live"} viewer={{ userId: user.id, isHost, spaceId: space.id }} />
+        <Ballot items={queue} canVote viewer={{ userId: user.id, isHost, spaceId: space.id }} />
       </div>
       <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
         <InviteCard link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
-        {space.status === "live" && <InTheRoomCard />}
-        {space.status === "live" && <AddSongCard spaceId={space.id} />}
+        <InTheRoomCard />
+        <AddSongCard spaceId={space.id} />
       </aside>
-      {space.status === "live" && <AddSongSheet spaceId={space.id} />}
+      <AddSongSheet spaceId={space.id} />
     </div>
   );
 }
