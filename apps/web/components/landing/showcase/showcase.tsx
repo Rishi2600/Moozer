@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { LaptopFrame, PhoneFrame, ScaledCanvas } from "./frames";
 import { HostScreen } from "./host-screen";
+import { PhoneScreen } from "./phone-screen";
 import { SCENES, SPACE_NAME, filmState } from "./scenes";
 import { useSceneClock } from "./use-scene-clock";
 
@@ -43,13 +44,13 @@ export function Showcase({ qr }: { qr: string }) {
             <HostScreen film={film} qr={qr} sharing={current.id === "share"} />
           </LaptopFrame>
           <PhoneFrame className="absolute right-0 bottom-0 h-[600px] w-[290px]">
-            <div className="p-4 text-label-md text-muted-foreground">Guest: {film.scene}</div>
+            <PhoneScreen film={film} qr={qr} messageArrived={current.id !== "start" || p > 0.82} />
           </PhoneFrame>
         </div>
       </ScaledCanvas>
       <ScaledCanvas width={360} height={640} className="md:hidden">
         <PhoneFrame className="absolute inset-x-6 top-2 bottom-2">
-          <div className="p-4 text-label-md text-muted-foreground">Guest: {film.scene}</div>
+          <PhoneScreen film={film} qr={qr} messageArrived={current.id !== "start" || p > 0.82} />
         </PhoneFrame>
       </ScaledCanvas>
 

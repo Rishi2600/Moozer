@@ -47,7 +47,7 @@ export function PhoneFrame({ className, children }: { className?: string; childr
   return (
     <div className={cn("relative overflow-hidden rounded-[2.25rem] border-[6px] border-inverse-surface bg-background shadow-sunlit", className)}>
       <span aria-hidden className="absolute top-2 left-1/2 z-20 h-5 w-24 -translate-x-1/2 rounded-full bg-inverse-surface" />
-      <div className="relative size-full pt-8">{children}</div>
+      <div className="relative size-full pt-10">{children}</div>
     </div>
   );
 }
