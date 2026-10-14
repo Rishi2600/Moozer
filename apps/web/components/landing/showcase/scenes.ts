@@ -28,3 +28,62 @@ export const PEOPLE = ["Priya Raman", "Maya Chen", "Arjun Mehta", "Leo Okafor", 
 export const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
 // Progress of a sub-step inside a scene: 0 before `from`, 1 after `to`.
 export const step = (p: number, from: number, to: number) => Math.min(1, Math.max(0, (p - from) / (to - from)));
+
+export type PhoneView = "invite" | "scan" | "joined" | "sheet" | "ballot";
+
+// Everything both screens show at a moment of the film. Pure, so it's
+// testable and the film can be paused or sought anywhere.
+export function filmState(scene: SceneId, p: number) {
+  const at = SCENES.findIndex((s) => s.id === scene);
+  const after = (id: SceneId) => at > SCENES.findIndex((s) => s.id === id);
+  const during = (id: SceneId) => scene === id;
+
+  const typed = during("start") ? SPACE_NAME.slice(0, Math.round(step(p, 0.08, 0.6) * SPACE_NAME.length)) : SPACE_NAME;
+  const live = !during("start") || p > 0.8;
+  const here = during("start") ? 1 : during("share") ? 1 + Math.round(step(p, 0.4, 0.9) * (PEOPLE.length - 1)) : PEOPLE.length;
+  const added = after("add") || (during("add") && p > 0.7);
+
+  // Votes: the added song climbs from 1 to the top during the vote scene.
+  const climb = during("vote") ? step(p, 0.1, 0.85) : after("vote") ? 1 : 0;
+  const songs = [...QUEUE, ...(added ? [ADDED] : [])].map((s) => ({
+    ...s,
+    votes: s.id === ADDED.id ? s.votes + Math.round(climb * 7) : s.id === "dreams" ? s.votes + Math.round(climb * 1) : s.votes,
+    hasVoted: s.id === ADDED.id,
+  }));
+  // Ties go to the song added first (here: the order of QUEUE, then ADDED).
+  const order = [...QUEUE.map((s) => s.id), ADDED.id];
+  songs.sort((a, b) => b.votes - a.votes || order.indexOf(a.id) - order.indexOf(b.id));
+
+  // Play: the current song finishes, then the leader starts by itself.
+  const switched = during("play") && p > 0.55;
+  const playing = switched ? { ...songs[0], seconds: 248 } : NOW_PLAYING;
+  const queue = switched ? songs.slice(1) : songs;
+  const elapsed = during("play") ? (switched ? step(p, 0.55, 1) * 22 : 300 + step(p, 0, 0.5) * (NOW_PLAYING.seconds - 300)) : 161 + at * 11 + p * 5;
+
+  const phone: PhoneView = during("start")
+    ? "invite"
+    : during("share")
+      ? p < 0.4 ? "scan" : "joined"
+      : during("add")
+        ? "sheet"
+        : "ballot";
+  const pasted = during("add") ? "youtu.be/5NV6Rdv1a3I".slice(0, Math.round(step(p, 0.08, 0.38) * 20)) : "";
+
+  return {
+    typed,
+    dialogOpen: during("start") && p < 0.8,
+    live,
+    here,
+    people: PEOPLE.slice(0, here),
+    added,
+    justAdded: during("add") && p > 0.7,
+    queue,
+    playing,
+    elapsed,
+    phone,
+    pasted,
+    previewReady: during("add") && p > 0.42,
+    tapAdd: during("add") && p > 0.62 && p < 0.72,
+    tapVote: during("vote") && p > 0.08 && p < 0.16,
+  };
+}
