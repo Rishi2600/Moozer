@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { TOO_MANY_TRIES, joinLimit, userKey } from "@/lib/join-limit";
 import { getSession } from "@/lib/session";
 import { SPACE_NAME_MAX, cleanSpaceName, parseJoinInput } from "@/lib/spaces/codes";
 import { parseScheduledFor } from "@/lib/spaces/schedule";
@@ -36,7 +37,10 @@ export async function joinSpace(_previous: FormState, formData: FormData): Promi
   const target = typeof raw === "string" ? parseJoinInput(raw) : null;
   if (!target) return { error: "Paste a Moozer space link, or type the 6-character code from the host's screen." };
 
+  const key = userKey(session.user.id);
+  if (joinLimit.blocked(key)) return TOO_MANY_TRIES;
   const result = await resolveJoinTarget(target, session.user.id);
+  if (!result.ok && result.reason === "not-found") joinLimit.fail(key);
   if (!result.ok) {
     if (result.reason === "ended") return { error: "That space has ended. Ask the host for a new link." };
     if (result.reason === "removed") return { error: "The host removed you from that space, so you can't rejoin it." };
