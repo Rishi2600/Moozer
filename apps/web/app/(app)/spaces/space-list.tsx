@@ -2,6 +2,7 @@ import type { SpaceStatus } from "@moozer/protocol/messages";
 import { Music, Users } from "lucide-react";
 import Link from "next/link";
 
+import { OpensAt } from "@/components/local-time";
 import { SpaceStatusBadge } from "@/components/space/status-badge";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/relative-time";
@@ -12,6 +13,8 @@ type SpaceSummary = {
   slug: string;
   status: SpaceStatus;
   endedAt: Date | null;
+  scheduledFor: Date | null;
+  listeners: number;
   _count: { members: number };
   host?: { name: string };
   queue: { title: string }[]; // the song playing, if any
@@ -40,13 +43,17 @@ export function SpaceRow({ space, actions }: { space: SpaceSummary; actions?: Re
         </div>
         <div className="flex items-center gap-3 text-body-sm text-muted-foreground">
           {space.host && <span className="truncate">Hosted by {space.host.name}</span>}
-          {space.status !== "ended" ? (
-            <span className="flex items-center gap-1 tabular-nums">
-              <Users className="size-3.5 text-faint-foreground" aria-hidden />
-              {members === 1 ? "Just you" : `${members} joined`}
+          {space.status === "ended" ? (
+            space.endedAt && <span>Ended {timeAgo(space.endedAt)}</span>
+          ) : space.status === "scheduled" && space.scheduledFor ? (
+            <span>
+              Opens <OpensAt date={space.scheduledFor} />
             </span>
           ) : (
-            space.endedAt && <span>Ended {timeAgo(space.endedAt)}</span>
+            <span className="flex items-center gap-1 tabular-nums">
+              <Users className="size-3.5 text-faint-foreground" aria-hidden />
+              {space.listeners > 0 ? `${space.listeners} here` : members === 1 ? "Just you" : `${members} joined`}
+            </span>
           )}
           {space.status === "live" && space.queue[0] && (
             <span className="hidden min-w-0 items-center gap-1 md:flex">
