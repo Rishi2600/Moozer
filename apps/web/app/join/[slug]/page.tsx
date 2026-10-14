@@ -3,10 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { OpensAt } from "@/components/local-time";
 import { Logo } from "@/components/logo";
 import { ProgressBar } from "@/components/queue/progress-bar";
 import { SongThumb } from "@/components/queue/song-thumb";
 import { VoteButton } from "@/components/queue/vote-button";
+import { SpaceStatusBadge } from "@/components/space/status-badge";
 import { Badge, BadgeDot } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/session";
@@ -46,17 +48,24 @@ export default async function JoinPage({ params }: PageProps<"/join/[slug]">) {
 
   const { space, nowPlaying, queue, total } = preview;
   return (
-    <Shell live>
+    <Shell live={space.status === "live"}>
       <div className="flex flex-col gap-1">
         <span className="flex items-center gap-3 text-body-sm text-muted-foreground">
-          <Badge variant="live"><BadgeDot pulse />Live</Badge>
+          <SpaceStatusBadge status={space.status} />
           <span className="flex items-center gap-1 tabular-nums">
             <Users className="size-3.5" aria-hidden />
             {space._count.members} joined
           </span>
         </span>
         <h1 className="text-headline-lg-mobile text-foreground">{space.name}</h1>
+        {space.description && <p className="text-body-md text-foreground">{space.description}</p>}
         <p className="text-body-md text-muted-foreground">Hosted by {space.host.name}</p>
+        {space.status === "paused" && <p className="text-body-md text-primary">On a break: you can still add songs and vote.</p>}
+        {space.status === "scheduled" && space.scheduledFor && (
+          <p className="text-body-md text-primary">
+            Opens <OpensAt date={space.scheduledFor} />. Join now to line up songs.
+          </p>
+        )}
       </div>
 
       {nowPlaying && (
