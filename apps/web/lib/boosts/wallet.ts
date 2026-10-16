@@ -90,3 +90,26 @@ export async function undoBoost(boostId: string, userId: string) {
     return count === 1;
   });
 }
+
+export const HISTORY_SIZE = 20;
+
+// The latest changes to someone's boosts, newest first, for the Account page.
+export async function getWalletHistory(userId: string) {
+  return prisma.boostLedger.findMany({
+    where: { userId },
+    orderBy: { seq: "desc" },
+    take: HISTORY_SIZE,
+    select: {
+      id: true,
+      delta: true,
+      reason: true,
+      cause: true,
+      songTitle: true,
+      createdAt: true,
+      space: { select: { name: true } },
+      order: { select: { provider: true, amountPaise: true, boosts: true, coupon: { select: { code: true } } } },
+    },
+  });
+}
+
+export type WalletEntry = Awaited<ReturnType<typeof getWalletHistory>>[number];

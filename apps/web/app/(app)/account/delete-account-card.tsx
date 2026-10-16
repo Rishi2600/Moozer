@@ -23,7 +23,7 @@ import { authErrorMessage } from "@/lib/auth-errors";
 
 // Password accounts confirm with their password. Google/GitHub-only accounts
 // need a sign-in from the last day (Better Auth's "fresh session" rule).
-export function DeleteAccountCard({ hasPassword, sessionIsFresh }: { hasPassword: boolean; sessionIsFresh: boolean }) {
+export function DeleteAccountCard({ hasPassword, sessionIsFresh, boosts }: { hasPassword: boolean; sessionIsFresh: boolean; boosts: number }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +73,7 @@ export function DeleteAccountCard({ hasPassword, sessionIsFresh }: { hasPassword
             <DialogTitle>Delete your account?</DialogTitle>
             <DialogDescription>
               Your spaces, the songs you added and your votes are removed for good.
+              {boosts > 0 && <> You&apos;ll also lose your {boosts} {boosts === 1 ? "boost" : "boosts"}, including any you bought.</>}
             </DialogDescription>
           </DialogHeader>
           {needsSignIn ? (
