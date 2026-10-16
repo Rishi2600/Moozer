@@ -89,7 +89,10 @@ export function LandingFooter() {
           <Logo showTagline={false} />
           <p className="text-body-sm text-muted-foreground">Shared listening rooms and democratic party queues.</p>
         </div>
-        <nav aria-label="Footer" className="flex items-center gap-6 text-body-sm text-muted-foreground">
+        <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-6 gap-y-2 text-body-sm text-muted-foreground">
+          <Link href="/pricing" className="hover:text-primary">Pricing</Link>
+          <Link href="/refunds" className="hover:text-primary">Refunds</Link>
+          <Link href="/contact" className="hover:text-primary">Contact</Link>
           <Link href="/privacy" className="hover:text-primary">Privacy</Link>
           <Link href="/terms" className="hover:text-primary">Terms</Link>
           <span className="text-faint-foreground">© 2026 Moozer</span>

@@ -3,7 +3,8 @@ import { LandingHeader } from "./landing-header";
 
 export const CONTACT_EMAIL = "rishiraj6177@gmail.com";
 
-// Shared layout for Privacy and Terms: readable prose column.
+// Shared layout for the policy pages (Privacy, Terms, Pricing, Refunds,
+// Contact): a readable prose column.
 export function LegalPage({ title, updated, children }: { title: string; updated: string; children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-background">

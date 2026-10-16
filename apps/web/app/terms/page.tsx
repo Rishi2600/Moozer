@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 
+import Link from "next/link";
+
 import { CONTACT_EMAIL, LegalPage } from "@/components/landing/legal-page";
 
 export const metadata: Metadata = { title: "Terms · Moozer" };
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms" updated="14 October 2026">
+    <LegalPage title="Terms" updated="17 October 2026">
       <p>
         These are the rules for using Moozer, run by Moozer. By creating an account or joining a space you agree to them. Questions?
         Email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
@@ -29,6 +31,25 @@ export default function TermsPage() {
         Moozer doesn&apos;t host any music. Songs are YouTube videos, owned by their creators and shown through YouTube&apos;s player, so the{" "}
         <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a> apply to them too.
       </p>
+
+      <h2>Boosts and payments</h2>
+      <ul>
+        <li>A boost adds votes to a song. Everyone gets a free one that comes back 5.5 hours after it&apos;s used, and you can buy more.</li>
+        <li>
+          Prices are in Indian rupees and shown before you pay (see <Link href="/pricing">Pricing and delivery</Link>). Payments are handled by
+          Razorpay; Moozer never sees your card, bank or UPI details.
+        </li>
+        <li>To buy boosts you must be 18 or older, or have permission from a parent or guardian.</li>
+        <li>
+          Boosts aren&apos;t money: they can&apos;t be exchanged for cash, sold or moved to another account. Bought boosts never expire, and
+          deleting your account removes any you have left.
+        </li>
+        <li>Discount codes can be changed or withdrawn at any time and have no cash value.</li>
+        <li>
+          Refunds follow our <Link href="/refunds">Refunds and cancellation</Link> policy. If a payment is reversed or charged back after its
+          boosts were added, those boosts are taken back.
+        </li>
+      </ul>
 
       <h2>Be decent</h2>
       <ul>
