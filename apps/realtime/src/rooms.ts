@@ -1,4 +1,5 @@
-import { CLOSE, type Person, type ServerMessage, type SpaceStatus } from "@moozer/protocol/messages";
+import { Bucket, REACTION_LIMIT } from "@moozer/protocol/limit";
+import { CLOSE, type Person, type Reaction, type ServerMessage, type SpaceStatus } from "@moozer/protocol/messages";
 
 export type Member = {
   userId: string;
@@ -13,6 +14,7 @@ type Room = { members: Set<Member>; pending: Change | null; timer: ReturnType<ty
 // onCount hears every space's head count as it changes (0 when it empties).
 export class Rooms {
   private rooms = new Map<string, Room>();
+  private buckets = new WeakMap<Member, Bucket>();
 
   constructor(
     private batchMs = 100,
@@ -49,6 +51,19 @@ export class Rooms {
       room.timer = null;
       for (const member of room.members) member.send(message);
     }, this.batchMs);
+  }
+
+  // A reaction goes straight to everyone else's screens (the sender shows
+  // their own at once). Over the rate limit it's dropped. Returns whether it went out.
+  react(spaceId: string, from: Member, emoji: Reaction, now = Date.now()) {
+    const room = this.rooms.get(spaceId);
+    if (!room?.members.has(from)) return false;
+    let bucket = this.buckets.get(from);
+    if (!bucket) this.buckets.set(from, (bucket = new Bucket(REACTION_LIMIT.burst, REACTION_LIMIT.perSecond, now)));
+    if (!bucket.take(now)) return false;
+    const message: ServerMessage = { type: "reaction", emoji, from: { id: from.userId, name: from.name } };
+    for (const member of room.members) if (member !== from) member.send(message);
+    return true;
   }
 
   // The host removed someone: close every screen they have open here.

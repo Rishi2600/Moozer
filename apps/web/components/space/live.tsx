@@ -1,14 +1,31 @@
 "use client";
 
-import { CLOSE, type Person, type ServerMessage } from "@moozer/protocol/messages";
+import { Bucket, REACTION_LIMIT } from "@moozer/protocol/limit";
+import { CLOSE, type ClientMessage, type Person, type Reaction, type ServerMessage } from "@moozer/protocol/messages";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { realtimeTicketAction } from "@/app/(app)/s/[slug]/actions";
 
-type Live = { status: "connecting" | "live" | "offline"; here: number | null; people: Person[]; reconnect: () => void };
+export type ReactionEvent = { emoji: Reaction; from: Person | null }; // null: this screen's own
+type Live = {
+  status: "connecting" | "live" | "offline";
+  here: number | null;
+  people: Person[];
+  reconnect: () => void;
+  react: (emoji: Reaction) => void;
+  // Reactions arrive as events, not state, so they don't re-render the page.
+  onReaction: (listener: (event: ReactionEvent) => void) => () => void;
+};
 
-const LiveContext = createContext<Live>({ status: "connecting", here: null, people: [], reconnect: () => {} });
+const LiveContext = createContext<Live>({
+  status: "connecting",
+  here: null,
+  people: [],
+  reconnect: () => {},
+  react: () => {},
+  onReaction: () => () => {},
+});
 export const useLive = () => useContext(LiveContext);
 
 const URL_BASE = process.env.NEXT_PUBLIC_REALTIME_URL;
@@ -19,9 +36,12 @@ const URL_BASE = process.env.NEXT_PUBLIC_REALTIME_URL;
 export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string; slug: string; ticket: string | null; children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [state, setState] = useState<Omit<Live, "reconnect">>({ status: "connecting", here: null, people: [] });
+  const [state, setState] = useState<Pick<Live, "status" | "here" | "people">>({ status: "connecting", here: null, people: [] });
   const latest = useRef({ pathname, slug, ticket });
   const reconnectNow = useRef<() => void>(() => {});
+  const sendNow = useRef<(message: ClientMessage) => boolean>(() => false);
+  const [listeners] = useState(() => new Set<(event: ReactionEvent) => void>());
+  const [reactionBucket] = useState(() => new Bucket(REACTION_LIMIT.burst, REACTION_LIMIT.perSecond));
 
   useEffect(() => {
     latest.current = { pathname, slug, ticket: latest.current.ticket };
@@ -58,7 +78,9 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
       };
       socket.onmessage = (event) => {
         const message = JSON.parse(String(event.data)) as ServerMessage;
-        if (message.type === "presence") {
+        if (message.type === "reaction") {
+          for (const listener of listeners) listener({ emoji: message.emoji, from: message.from });
+        } else if (message.type === "presence") {
           setState((s) => ({ ...s, here: message.here, people: message.people }));
         } else if (message.slug && message.slug !== latest.current.slug) {
           // The host reset the link: same space, new address.
@@ -87,6 +109,11 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
       retryTimer = setTimeout(connect, delay);
     }
 
+    sendNow.current = (message) => {
+      if (socket?.readyState !== WebSocket.OPEN) return false;
+      socket.send(JSON.stringify(message));
+      return true;
+    };
     reconnectNow.current = () => {
       attempt = 0;
       socket?.close();
@@ -104,9 +131,24 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
       clearTimeout(refreshTimer);
       socket?.close();
     };
-  }, [spaceId, router]);
+  }, [spaceId, router, listeners]);
 
   return (
-    <LiveContext.Provider value={{ ...state, reconnect: () => reconnectNow.current() }}>{children}</LiveContext.Provider>
+    <LiveContext.Provider
+      value={{
+        ...state,
+        reconnect: () => reconnectNow.current(),
+        react: (emoji) => {
+          // Shown here at once; the server relays it to everyone else.
+          if (reactionBucket.take() && sendNow.current({ type: "react", emoji })) for (const listener of listeners) listener({ emoji, from: null });
+        },
+        onReaction: (listener) => {
+          listeners.add(listener);
+          return () => void listeners.delete(listener);
+        },
+      }}
+    >
+      {children}
+    </LiveContext.Provider>
   );
 }

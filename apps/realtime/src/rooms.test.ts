@@ -68,6 +68,38 @@ describe("Rooms", () => {
   });
 });
 
+describe("Reactions", () => {
+  it("go to everyone else in the space, with who sent them", () => {
+    const rooms = new Rooms();
+    const maya = member("maya", "Maya"), leo = member("leo", "Leo"), other = member("zed");
+    rooms.join("s1", maya.m);
+    rooms.join("s1", leo.m);
+    rooms.join("s2", other.m);
+    for (const x of [maya, leo, other]) x.inbox.length = 0;
+    expect(rooms.react("s1", maya.m, "🔥")).toBe(true);
+    expect(leo.inbox).toEqual([{ type: "reaction", emoji: "🔥", from: { id: "maya", name: "Maya" } }]);
+    expect(maya.inbox).toEqual([]);
+    expect(other.inbox).toEqual([]);
+  });
+
+  it("are dropped from someone not in the room", () => {
+    const rooms = new Rooms();
+    const leo = member("leo");
+    rooms.join("s1", leo.m);
+    expect(rooms.react("s1", member("maya").m, "🔥")).toBe(false);
+  });
+
+  it("are rate limited per screen", () => {
+    const rooms = new Rooms();
+    const maya = member("maya"), leo = member("leo");
+    rooms.join("s1", maya.m);
+    rooms.join("s1", leo.m);
+    const sent = Array.from({ length: 10 }, () => rooms.react("s1", maya.m, "🙌", 1000));
+    expect(sent.filter(Boolean)).toHaveLength(6);
+    expect(rooms.react("s1", maya.m, "🙌", 2000)).toBe(true); // refilled a second later
+  });
+});
+
 describe("Removing someone", () => {
   it("closes their screens and updates presence", () => {
     const rooms = new Rooms();
@@ -82,5 +114,6 @@ describe("Removing someone", () => {
     rooms.remove("s1", "leo");
     expect(closed).toEqual([4003, 4003]);
     expect(maya.inbox.at(-1)).toMatchObject({ here: 1 });
+    expect(rooms.react("s1", leo1.m, "🔥")).toBe(false);
   });
 });

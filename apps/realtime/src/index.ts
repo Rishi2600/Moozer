@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 
-import { CLOSE, type ServerMessage } from "@moozer/protocol/messages";
+import { CLOSE, isReaction, type ClientMessage, type ServerMessage } from "@moozer/protocol/messages";
 import { verifyTicket } from "@moozer/protocol/ticket";
 import pg from "pg";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -41,7 +41,8 @@ const server = createServer((req, res) => {
   res.writeHead(404).end();
 });
 
-const wss = new WebSocketServer({ noServer: true });
+// Browsers only send tiny messages (a reaction), so anything big is refused.
+const wss = new WebSocketServer({ noServer: true, maxPayload: 1024 });
 const alive = new WeakSet<WebSocket>();
 
 server.on("upgrade", (req, socket, head) => {
@@ -67,6 +68,16 @@ server.on("upgrade", (req, socket, head) => {
     ws.on("pong", () => alive.add(ws));
     ws.on("error", (err) => console.error("realtime: socket error", err.message));
     ws.on("close", () => rooms.leave(ticket.spaceId, member));
+    ws.on("message", (data, isBinary) => {
+      if (isBinary) return;
+      let message: ClientMessage;
+      try {
+        message = JSON.parse(data.toString()) as ClientMessage;
+      } catch {
+        return;
+      }
+      if (message?.type === "react" && isReaction(message.emoji)) rooms.react(ticket.spaceId, member, message.emoji);
+    });
     rooms.join(ticket.spaceId, member);
   });
 });
