@@ -1,13 +1,15 @@
 "use client";
 
-import { CircleCheck, Info, Link2, ListPlus, ThumbsUp, X, Zap } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { CircleCheck, Heart, Info, Link2, ListPlus, ThumbsUp, X, Zap } from "lucide-react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { addSongAction, previewSongAction, voteAction, type Preview } from "@/app/(app)/s/[slug]/actions";
 import { FormError } from "@/components/auth/form-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DEDICATION_MAX } from "@/lib/songs/dedication";
 import { formatDuration } from "@/lib/songs/links";
 
 import { SongThumb } from "./song-thumb";
@@ -16,6 +18,8 @@ import { SongThumb } from "./song-thumb";
 // the copy already queued). onDone fires with the confirmation to show.
 export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; onDone: (message: string) => void; autoFocus?: boolean }) {
   const [link, setLink] = useState("");
+  const [dedication, setDedication] = useState("");
+  const dedicationId = useId();
   const [preview, setPreview] = useState<Preview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, startCheck] = useTransition();
@@ -42,12 +46,13 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
 
   function finish(message: string) {
     change("");
+    setDedication("");
     onDone(message);
   }
 
   function add(videoId: string) {
     startSave(async () => {
-      const result = await addSongAction(spaceId, videoId);
+      const result = await addSongAction(spaceId, videoId, dedication);
       if (result.ok) finish("Added to queue");
       else setError(result.error);
     });
@@ -62,6 +67,8 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
   }
 
   const shown = link.trim() ? preview : null;
+  const dedicationLength = [...dedication.trim()].length; // an emoji counts once, as on the server
+  const dedicationTooLong = dedicationLength > DEDICATION_MAX;
   return (
     <div className="flex flex-col gap-space-md">
       <div className="relative">
@@ -95,7 +102,26 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
               Ready
             </span>
           </SongPreview>
-          <Button onClick={() => add(shown.song.videoId)} disabled={saving} className="w-full">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={dedicationId} className="text-foreground">Dedicate it <span className="font-normal text-muted-foreground">(optional)</span></Label>
+            <div className="relative">
+              <Heart className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary" aria-hidden />
+              <Input
+                id={dedicationId}
+                value={dedication}
+                onChange={(event) => setDedication(event.target.value)}
+                placeholder="For Sam's birthday 🎂"
+                autoComplete="off"
+                className="pl-10"
+                aria-invalid={dedicationTooLong || undefined}
+                aria-describedby={dedication ? `${dedicationId}-count` : undefined}
+              />
+            </div>
+            {dedication && <p id={`${dedicationId}-count`} className={dedicationTooLong ? "text-right text-body-sm text-destructive tabular-nums" : "text-right text-body-sm text-faint-foreground tabular-nums"}>
+              {dedicationLength} of {DEDICATION_MAX} characters
+            </p>}
+          </div>
+          <Button onClick={() => add(shown.song.videoId)} disabled={saving || dedicationTooLong} className="w-full">
             <ListPlus aria-hidden />
             {saving ? "Adding…" : "Add to queue"}
           </Button>

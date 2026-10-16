@@ -5,6 +5,7 @@ import { refresh } from "next/cache";
 import { addSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote } from "@/lib/queue/data";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
+import { cleanDedication } from "@/lib/songs/dedication";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
 import { openSpaceNow, removeFromSpace, setSpaceOnBreak } from "@/lib/spaces/data";
@@ -37,12 +38,14 @@ export async function previewSongAction(spaceId: string, link: string): Promise<
   return found.ok ? { state: "ready", song: found.song } : { state: "error", message: LOOKUP_ERRORS[found.reason] };
 }
 
-export async function addSongAction(spaceId: string, videoId: string) {
+export async function addSongAction(spaceId: string, videoId: string, dedication?: string) {
   const session = await getSession();
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again to add songs." };
+  const note = cleanDedication(dedication);
+  if (!note.ok) return { ok: false as const, error: note.error };
   const found = await lookupYouTube(videoId); // never trust song details from the browser
   if (!found.ok) return { ok: false as const, error: LOOKUP_ERRORS[found.reason] };
-  const result = await addSong(spaceId, session.user.id, found.song);
+  const result = await addSong(spaceId, session.user.id, found.song, note.value);
   if (result.status === "forbidden") return { ok: false as const, error: "Songs can only be added until the space ends." };
   if (result.status === "duplicate") return { ok: false as const, error: `${result.existing.title} is already in the queue.` };
   refresh();

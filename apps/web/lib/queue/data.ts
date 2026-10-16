@@ -17,6 +17,7 @@ const song = {
   channel: true,
   thumbnailUrl: true,
   durationSeconds: true,
+  dedication: true,
   addedAt: true,
   addedById: true,
   addedBy: { select: { name: true } },
@@ -82,7 +83,7 @@ export async function findActiveCopy(spaceId: string, videoId: string, userId?: 
 }
 
 // Adds the song with the adder's vote, unless that video is already in.
-export async function addSong(spaceId: string, userId: string, details: SongDetails) {
+export async function addSong(spaceId: string, userId: string, details: SongDetails, dedication: string | null = null) {
   const who = await access(spaceId, userId);
   if (!who?.open) return { status: "forbidden" as const };
   const existing = await findActiveCopy(spaceId, details.videoId, userId);
@@ -97,6 +98,7 @@ export async function addSong(spaceId: string, userId: string, details: SongDeta
         channel: details.channel,
         thumbnailUrl: details.thumbnailUrl,
         durationSeconds: details.durationSeconds,
+        dedication,
         votes: { create: { userId } },
       },
       select: { id: true },

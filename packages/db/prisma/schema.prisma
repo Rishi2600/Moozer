@@ -191,6 +191,7 @@ model QueueItem {
   addedAt         DateTime        @default(now())
   startedAt       DateTime? // "Played at" in History
   finalVotes      Int? // vote count when it started playing
+  dedication      String?         @db.VarChar(60) // "For Sam's birthday", from whoever added it
   // Playback position for the playing song, shared by every screen:
   // playing -> position = now - anchorAt; paused -> position = pausedAtMs.
   anchorAt        DateTime?
