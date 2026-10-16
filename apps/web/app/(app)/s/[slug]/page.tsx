@@ -4,7 +4,7 @@ import { NowPlayingCard } from "@/components/queue/now-playing";
 import { AddSongCard } from "@/components/queue/add-song-card";
 import { AddSongSheet } from "@/components/queue/add-song-sheet";
 import { Ballot } from "@/components/queue/ballot";
-import { HostPlayer, PauseButton } from "@/components/queue/host-player";
+import { HostPlayer, PauseButton, SeekButton } from "@/components/queue/host-player";
 import { PlayNextButton } from "@/components/queue/play-next-button";
 import { EndedCard } from "@/components/space/ended-card";
 import { InviteCard } from "@/components/space/invite-card";
@@ -54,7 +54,13 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
           controls={
             isHost && live ? (
               <div className="flex items-center gap-2">
-                {nowPlaying && <PauseButton spaceId={space.id} paused={nowPlaying.pausedAtMs !== null} />}
+                {nowPlaying && (
+                  <>
+                    <SeekButton spaceId={space.id} seconds={-10} />
+                    <PauseButton spaceId={space.id} paused={nowPlaying.pausedAtMs !== null} />
+                    <SeekButton spaceId={space.id} seconds={10} />
+                  </>
+                )}
                 <PlayNextButton spaceId={space.id} playing={nowPlaying !== null} queued={queue.length} />
               </div>
             ) : undefined

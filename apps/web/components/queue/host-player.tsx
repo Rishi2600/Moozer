@@ -1,9 +1,9 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { FastForward, Pause, Play, Rewind } from "lucide-react";
 import { useCallback, useState, useTransition } from "react";
 
-import { setPausedAction, songEndedAction } from "@/app/(app)/s/[slug]/actions";
+import { seekAction, setPausedAction, songEndedAction } from "@/app/(app)/s/[slug]/actions";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 
@@ -45,6 +45,24 @@ export function PauseButton({ spaceId, paused }: { spaceId: string; paused: bool
       onClick={() => start(async () => void (await setPausedAction(spaceId, !paused)))}
     >
       {paused ? <Play aria-hidden /> : <Pause aria-hidden />}
+    </Button>
+  );
+}
+
+// Back or forward 10 seconds for everyone (the arrow keys do the same).
+export function SeekButton({ spaceId, seconds }: { spaceId: string; seconds: -10 | 10 }) {
+  const [pending, start] = useTransition();
+  const label = seconds < 0 ? "Back 10 seconds" : "Forward 10 seconds";
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      disabled={pending}
+      aria-label={label}
+      title={label}
+      onClick={() => start(async () => void (await seekAction(spaceId, seconds)))}
+    >
+      {seconds < 0 ? <Rewind aria-hidden /> : <FastForward aria-hidden />}
     </Button>
   );
 }

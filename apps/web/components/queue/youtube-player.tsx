@@ -68,6 +68,8 @@ export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = f
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, playsinline: 1, rel: 0, start: Math.floor(positionMs(start) / 1000) },
         events: {
           onReady: (event) => {
+            // Keep focus (and so the keyboard shortcuts) on the page, not in the video.
+            event.target.getIframe().tabIndex = -1;
             if (latest.current.muted) event.target.mute();
             setReady(true);
           },
@@ -120,7 +122,8 @@ export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = f
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
-      <div ref={box} className="absolute inset-0 [&>iframe]:size-full" />
+      {/* A click in the video would pause it here only, out of step with everyone. */}
+      <div ref={box} className="pointer-events-none absolute inset-0 [&>iframe]:size-full" />
       {blocked && (
         <button
           type="button"

@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 
-import { addSong, findActiveCopy, playNext, removeSong, requeue, setPaused, setVote } from "@/lib/queue/data";
+import { addSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote } from "@/lib/queue/data";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { parseSongLink } from "@/lib/songs/links";
@@ -104,6 +104,18 @@ export async function setPausedAction(spaceId: string, paused: boolean) {
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
   if (!(await setPaused(spaceId, session.user.id, paused))) {
     return { ok: false as const, error: "Only the host can pause or play, and only while a song is playing." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// Host only: jump the playing song forward or back (the buttons and arrow keys use 10s).
+export async function seekAction(spaceId: string, seconds: number) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!Number.isFinite(seconds) || Math.abs(seconds) > 60) return { ok: false as const, error: "Jumps can be up to a minute." };
+  if (!(await seek(spaceId, session.user.id, seconds * 1000))) {
+    return { ok: false as const, error: "Only the host can skip around a song, and only while it's playing." };
   }
   refresh();
   return { ok: true as const };

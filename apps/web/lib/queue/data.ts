@@ -5,7 +5,7 @@ import { Prisma, prisma } from "@moozer/db";
 import type { SongDetails } from "@/lib/songs/lookup";
 
 import { leadMargin, sortQueue } from "./order";
-import { positionMs, resumedAnchor } from "./playback";
+import { positionMs, resumedAnchor, seekedState } from "./playback";
 
 // A song that has stopped playing loses its playback position (CHECK constraint).
 export const FINISHED = { status: "played" as const, anchorAt: null, pausedAtMs: null };
@@ -202,6 +202,19 @@ export async function setPaused(spaceId: string, hostId: string, paused: boolean
     });
     if (!playing) return false;
     await setPlayback(tx, spaceId, paused);
+    return true;
+  });
+}
+
+// Host only, while live: jump the playing song forward or back (paused or not).
+export async function seek(spaceId: string, hostId: string, deltaMs: number) {
+  return prisma.$transaction(async (tx) => {
+    const playing = await tx.queueItem.findFirst({
+      where: { spaceId, status: "playing", space: { hostId, status: "live" } },
+      select: { id: true, anchorAt: true, pausedAtMs: true, durationSeconds: true },
+    });
+    if (!playing) return false;
+    await tx.queueItem.update({ where: { id: playing.id }, data: seekedState(playing, deltaMs, playing.durationSeconds) });
     return true;
   });
 }
