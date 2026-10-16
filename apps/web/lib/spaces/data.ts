@@ -4,6 +4,7 @@ import { Prisma, prisma } from "@moozer/db";
 import { cache } from "react";
 
 import { FINISHED, setPlayback } from "@/lib/queue/data";
+import { setRefundCause } from "@/lib/boosts/wallet";
 import { ballotVotes } from "@/lib/queue/boost";
 import { sortQueue } from "@/lib/queue/order";
 
@@ -177,6 +178,7 @@ export async function removeFromSpace(spaceId: string, hostId: string, userId: s
   return prisma.$transaction(async (tx) => {
     const space = await tx.space.findFirst({ where: { id: spaceId, hostId, status: OPEN }, select: { id: true } });
     if (!space) return false;
+    await setRefundCause(tx, "person_removed"); // boosts on their songs, and theirs, go back
     await tx.vote.deleteMany({ where: { userId, queueItem: { spaceId, status: "queued" } } });
     await tx.boost.deleteMany({ where: { userId, queueItem: { spaceId, status: "queued" } } });
     await tx.queueItem.deleteMany({ where: { spaceId, addedById: userId, status: "queued" } });
@@ -187,7 +189,8 @@ export async function removeFromSpace(spaceId: string, hostId: string, userId: s
   });
 }
 
-// Ending also closes out the song that was playing, from any status.
+// Ending also closes out the song that was playing, from any status, and
+// refunds boosts on songs that never got to play.
 export async function endSpace(spaceId: string, hostId: string) {
   return prisma.$transaction(async (tx) => {
     const { count } = await tx.space.updateMany({
@@ -196,6 +199,8 @@ export async function endSpace(spaceId: string, hostId: string) {
     });
     if (count !== 1) return false;
     await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: FINISHED });
+    await setRefundCause(tx, "space_ended");
+    await tx.boost.deleteMany({ where: { spaceId, settled: false } });
     return true;
   });
 }

@@ -1,22 +1,23 @@
 "use client";
 
 import { Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { LocalTime } from "@/components/local-time";
 import { BOOST_VOTES } from "@/lib/queue/boost";
 import { cn } from "@/lib/utils";
 
-// True once the boost is back; flips by itself at readyAt.
-export function useBoostReady(readyAt: Date | null) {
-  const at = readyAt?.getTime() ?? null;
-  const [passed, setPassed] = useState<number | null>(null); // the readyAt that has gone by
+// Asks the server again when the free boost is due back, so the balance
+// shown includes it without a reload.
+export function useRefreshAt(at: Date | null) {
+  const router = useRouter();
+  const ms = at?.getTime() ?? null;
   useEffect(() => {
-    if (at === null) return;
-    const timer = setTimeout(() => setPassed(at), Math.max(0, at - Date.now()));
+    if (ms === null) return;
+    const timer = setTimeout(() => router.refresh(), Math.max(0, ms - Date.now()) + 500);
     return () => clearTimeout(timer);
-  }, [at]);
-  return at === null || passed === at;
+  }, [ms, router]);
 }
 
 export function BoostButton({ title, className, ...props }: React.ComponentProps<"button"> & { title: string }) {
@@ -39,12 +40,19 @@ export function BoostButton({ title, className, ...props }: React.ComponentProps
 // "⚡ +3 Sam" on a boosted song. Re-pops whenever another boost lands.
 export function BoostChip({ names, className }: { names: string[]; className?: string }) {
   if (names.length === 0) return null;
-  const firstNames = names.map((n) => n.split(" ")[0]);
+  const people = [...new Set(names)]; // someone can stack several boosts
+  const firstNames = people.map((n) => n.split(" ")[0]);
+  const tally = people
+    .map((n) => {
+      const times = names.filter((m) => m === n).length;
+      return times > 1 ? `${n} ×${times}` : n;
+    })
+    .join(", ");
   const who = firstNames.length > 2 ? `${firstNames.slice(0, 2).join(", ")} +${firstNames.length - 2}` : firstNames.join(" & ");
   return (
     <span
       key={names.length}
-      title={`Boosted by ${names.join(", ")}`}
+      title={`Boosted by ${tally}`}
       className={cn(
         "inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-bright/20 px-2 py-0.5 text-label-sm whitespace-nowrap text-on-secondary-container tabular-nums animate-in zoom-in-50 duration-500",
         className
@@ -57,20 +65,26 @@ export function BoostChip({ names, className }: { names: string[]; className?: s
   );
 }
 
-// Queue header: whether your boost is ready, or when it's back.
-export function BoostStatus({ ready, readyAt }: { ready: boolean; readyAt: Date | null }) {
+// Queue header: your boosts, and when the free one is back while it's out.
+export function BoostStatus({ balance, nextFreeAt }: { balance: number; nextFreeAt: Date | null }) {
+  const count = Math.max(0, balance);
   return (
     <span className="flex items-center gap-1 text-body-sm text-muted-foreground">
-      <Zap className={cn("size-4", ready ? "fill-amber-bright text-amber-bright" : "text-faint-foreground")} aria-hidden />
-      {ready || !readyAt ? (
-        <span>
-          Boost ready <span className="max-sm:hidden">· +{BOOST_VOTES} votes</span>
-        </span>
-      ) : (
-        <span>
-          Boost back at <LocalTime date={readyAt} />
-        </span>
-      )}
+      <Zap className={cn("size-4", count > 0 ? "fill-amber-bright text-amber-bright" : "text-faint-foreground")} aria-hidden />
+      <span>
+        {count > 0 && (
+          <span className="text-foreground">
+            {count} {count === 1 ? "boost" : "boosts"}
+          </span>
+        )}
+        {count > 0 && nextFreeAt && " · "}
+        {nextFreeAt && (
+          <>
+            {count > 0 ? "next free " : "Free boost back at "}
+            <LocalTime date={nextFreeAt} />
+          </>
+        )}
+      </span>
     </span>
   );
 }

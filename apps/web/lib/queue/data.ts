@@ -4,7 +4,9 @@ import { Prisma, prisma } from "@moozer/db";
 
 import type { SongDetails } from "@/lib/songs/lookup";
 
-import { ballotVotes, BOOST_UNDO_MS, boostReadyAt } from "./boost";
+import { setRefundCause } from "@/lib/boosts/wallet";
+
+import { ballotVotes } from "./boost";
 import { leadMargin, sortQueue } from "./order";
 import { positionMs, resumedAnchor, seekedState } from "./playback";
 
@@ -65,18 +67,6 @@ export async function getQueue(spaceId: string, userId: string) {
   );
   return { nowPlaying, queue, leadBy: leadMargin(queue) };
 }
-
-// The viewer's boost in this space: ready now (readyAt null) or when it's back.
-export async function getBoostState(spaceId: string, userId: string) {
-  const last = await prisma.boost.findFirst({
-    where: { spaceId, userId },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  });
-  return { readyAt: boostReadyAt(last?.createdAt ?? null) };
-}
-
-export type QueueView = Awaited<ReturnType<typeof getQueue>>;
 
 // The song already queued (or playing) for this video, if any.
 export async function findActiveCopy(spaceId: string, videoId: string, userId?: string) {
@@ -167,17 +157,26 @@ export async function removeSong(itemId: string, userId: string) {
   return count === 1;
 }
 
+// A song YouTube couldn't play gets its boosts refunded, but only if it failed
+// this soon after starting: the report comes from the host's browser, and a
+// song that has really played shouldn't hand its boosts back.
+export const UNPLAYABLE_WINDOW_MS = 15_000;
+
 // Host only. Moves the playing song to History and starts the chosen song
 // (or the top of the queue). With nothing queued it just finishes the current one.
-// endedItemId (auto-advance): only advance if that song is still the one playing,
+// ended (auto-advance): only advance if that song is still the one playing,
 // so two host tabs reporting the same ending can't skip two songs.
-export async function playNext(spaceId: string, hostId: string, itemId?: string, endedItemId?: string) {
+export async function playNext(spaceId: string, hostId: string, itemId?: string, ended?: { itemId: string; unplayable: boolean }) {
   return prisma.$transaction(async (tx) => {
     const space = await tx.space.findFirst({ where: { id: spaceId, hostId, status: "live" }, select: { id: true } });
     if (!space) return false;
-    if (endedItemId) {
-      const current = await tx.queueItem.findFirst({ where: { spaceId, status: "playing" }, select: { id: true } });
-      if (current?.id !== endedItemId) return true; // already moved on
+    if (ended) {
+      const current = await tx.queueItem.findFirst({ where: { spaceId, status: "playing" }, select: { id: true, startedAt: true } });
+      if (current?.id !== ended.itemId) return true; // already moved on
+      if (ended.unplayable && current.startedAt && Date.now() - current.startedAt.getTime() < UNPLAYABLE_WINDOW_MS) {
+        await setRefundCause(tx, "unplayable");
+        await tx.boost.deleteMany({ where: { queueItemId: current.id } });
+      }
     }
     const queued = await tx.queueItem.findMany({
       where: { spaceId, status: "queued", ...(itemId ? { id: itemId } : {}) },
@@ -192,6 +191,7 @@ export async function playNext(spaceId: string, hostId: string, itemId?: string,
         where: { id: next.id },
         data: { status: "playing", startedAt: now, finalVotes: next.votes, anchorAt: now, pausedAtMs: null },
       });
+      await tx.boost.updateMany({ where: { queueItemId: next.id }, data: { settled: true } }); // spent for good
     }
     return true;
   });
@@ -240,36 +240,6 @@ export async function seek(spaceId: string, hostId: string, deltaMs: number) {
     await tx.queueItem.update({ where: { id: playing.id }, data: seekedState(playing, deltaMs, playing.durationSeconds) });
     return true;
   });
-}
-
-// Spends the member's boost on a queued song (+3 votes) if it's ready. A lock
-// per person and space makes a double tap spend one boost, not two.
-export async function boostSong(itemId: string, userId: string) {
-  return prisma.$transaction(async (tx) => {
-    const item = await tx.queueItem.findFirst({
-      where: { id: itemId, status: "queued", space: { status: OPEN, members: { some: { userId } } } },
-      select: { id: true, spaceId: true },
-    });
-    if (!item) return { status: "gone" as const };
-    await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`boost:${item.spaceId}:${userId}`}))`;
-    const last = await tx.boost.findFirst({
-      where: { spaceId: item.spaceId, userId },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    });
-    const readyAt = boostReadyAt(last?.createdAt ?? null);
-    if (readyAt) return { status: "cooldown" as const, readyAt };
-    const boost = await tx.boost.create({ data: { spaceId: item.spaceId, userId, queueItemId: item.id }, select: { id: true } });
-    return { status: "boosted" as const, id: boost.id };
-  });
-}
-
-// Undo from the toast: within a minute, while the song is still queued.
-export async function undoBoost(boostId: string, userId: string) {
-  const { count } = await prisma.boost.deleteMany({
-    where: { id: boostId, userId, createdAt: { gt: new Date(Date.now() - BOOST_UNDO_MS) }, queueItem: { status: "queued" } },
-  });
-  return count === 1;
 }
 
 export const HISTORY_PAGE_SIZE = 8;

@@ -10,7 +10,7 @@ import { BOOST_VOTES } from "@/lib/queue/boost";
 import { leadMargin, sortQueue } from "@/lib/queue/order";
 import { useFlip } from "@/lib/use-flip";
 
-import { BoostButton, BoostStatus, useBoostReady } from "./boost";
+import { BoostButton, BoostStatus, useRefreshAt } from "./boost";
 import { QueueCard } from "./queue-card";
 import { QueueRow, type QueueRowItem } from "./queue-row";
 import { RowMenu } from "./row-menu";
@@ -21,7 +21,8 @@ type Message = { text: string; undo?: () => void };
 
 // The live ballot: votes and boosts apply instantly (re-sorted with the same
 // rules as the server), then the server action saves them and the page refreshes.
-type Viewer = { userId: string; name: string; isHost: boolean; spaceId: string; live: boolean; boostReadyAt: Date | null };
+type Wallet = { balance: number; nextFreeAt: Date | null };
+type Viewer = { userId: string; name: string; isHost: boolean; spaceId: string; live: boolean; wallet: Wallet };
 type Change = { kind: "vote"; id: string; voted: boolean } | { kind: "boost"; id: string; name: string };
 
 export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVote: boolean; viewer: Viewer }) {
@@ -38,15 +39,17 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
       })
     )
   );
-  // Spent here until the refresh brings the new readyAt.
-  const [spent, setSpent] = useState(false);
-  const boostReady = useBoostReady(viewer.boostReadyAt) && !spent;
-  const readyAtMs = viewer.boostReadyAt?.getTime() ?? null;
-  const [lastReadyAtMs, setLastReadyAtMs] = useState(readyAtMs);
-  if (lastReadyAtMs !== readyAtMs) {
-    setLastReadyAtMs(readyAtMs);
-    setSpent(false);
+  // Boosts spent here that the server's wallet doesn't show yet; cleared
+  // whenever a refresh brings a new wallet.
+  const [spent, setSpent] = useState(0);
+  const walletKey = `${viewer.wallet.balance}|${viewer.wallet.nextFreeAt?.getTime()}`;
+  const [lastWalletKey, setLastWalletKey] = useState(walletKey);
+  if (lastWalletKey !== walletKey) {
+    setLastWalletKey(walletKey);
+    setSpent(0);
   }
+  const balance = viewer.wallet.balance - spent;
+  useRefreshAt(viewer.wallet.nextFreeAt);
   const dismiss = useCallback(() => setMessage(null), []);
 
   function vote(id: string, voted: boolean, withUndo = true) {
@@ -60,12 +63,12 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
   }
 
   function boost(id: string) {
-    setSpent(true);
+    setSpent((n) => n + 1);
     startTransition(async () => {
       apply({ kind: "boost", id, name: viewer.name });
       const result = await boostAction(id);
       if (!result.ok) {
-        setSpent(false);
+        setSpent((n) => Math.max(0, n - 1));
         setMessage({ text: result.error });
         return;
       }
@@ -74,7 +77,7 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
         undo: () =>
           startTransition(async () => {
             const undone = await undoBoostAction(result.boostId);
-            setMessage({ text: undone.ok ? "Boost undone. It's yours to use again." : undone.error });
+            setMessage({ text: undone.ok ? "Boost undone. It's back with your boosts." : undone.error });
           }),
       });
     });
@@ -92,7 +95,7 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
   useFlip(list, optimistic.map((item) => item.id).join(","));
   return (
     <div ref={list} className="contents">
-      <QueueCard count={optimistic.length} status={canVote ? <BoostStatus ready={boostReady} readyAt={viewer.boostReadyAt} /> : undefined}>
+      <QueueCard count={optimistic.length} status={canVote ? <BoostStatus balance={balance} nextFreeAt={viewer.wallet.nextFreeAt} /> : undefined}>
         {optimistic.map((item, index) => (
           <QueueRow
             key={item.id}
@@ -108,7 +111,7 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
               />
             }
             boost={
-              canVote && boostReady ? <BoostButton title={item.title} disabled={offline} onClick={() => boost(item.id)} /> : undefined
+              canVote && balance > 0 ? <BoostButton title={item.title} disabled={offline} onClick={() => boost(item.id)} /> : undefined
             }
             menu={
               canVote && (viewer.isHost || item.addedById === viewer.userId) ? (

@@ -26,7 +26,7 @@ export function HostPlayer({ spaceId, playing }: { spaceId: string; playing: Pla
         onEnded={(itemId) => void songEndedAction(spaceId, itemId)}
         onError={(itemId) => {
           setMessage(`Couldn't play ${playing.title} on YouTube, so it was skipped.`);
-          void songEndedAction(spaceId, itemId);
+          void songEndedAction(spaceId, itemId, true);
         }}
       />
       {message && <Toast message={message} onDismiss={dismiss} />}

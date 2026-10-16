@@ -12,7 +12,8 @@ import { SongNudge } from "@/components/queue/song-nudge";
 import { EndedCard } from "@/components/space/ended-card";
 import { InviteCard } from "@/components/space/invite-card";
 import { InTheRoomCard } from "@/components/space/presence";
-import { getBoostState, getQueue, getSpaceStats } from "@/lib/queue/data";
+import { getWallet } from "@/lib/boosts/wallet";
+import { getQueue, getSpaceStats } from "@/lib/queue/data";
 import { getOrigin } from "@/lib/origin";
 import { requireSession } from "@/lib/session";
 import { formatJoinCode } from "@/lib/spaces/codes";
@@ -35,7 +36,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
   if (space.status === "ended") {
     return <EndedCard space={space} isHost={isHost} stats={await getSpaceStats(space.id)} />;
   }
-  const [{ nowPlaying, queue }, boost] = await Promise.all([getQueue(space.id, user.id), getBoostState(space.id, user.id)]);
+  const [{ nowPlaying, queue }, wallet] = await Promise.all([getQueue(space.id, user.id), getWallet(user.id)]);
   const live = space.status === "live"; // paused and scheduled spaces don't play
   const emptyHint =
     space.status === "scheduled"
@@ -76,7 +77,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
         <Ballot
           items={queue}
           canVote
-          viewer={{ userId: user.id, name: user.name, isHost, spaceId: space.id, live, boostReadyAt: boost.readyAt }}
+          viewer={{ userId: user.id, name: user.name, isHost, spaceId: space.id, live, wallet }}
         />
       </div>
       <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">

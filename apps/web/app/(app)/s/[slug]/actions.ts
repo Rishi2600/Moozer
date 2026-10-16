@@ -2,7 +2,8 @@
 
 import { refresh } from "next/cache";
 
-import { addSong, boostSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote, undoBoost } from "@/lib/queue/data";
+import { spendBoost, undoBoost } from "@/lib/boosts/wallet";
+import { addSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote } from "@/lib/queue/data";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { cleanDedication } from "@/lib/songs/dedication";
@@ -78,9 +79,9 @@ export async function playNextAction(spaceId: string, itemId?: string) {
 export async function boostAction(itemId: string) {
   const session = await getSession();
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again to boost." };
-  const result = await boostSong(itemId, session.user.id);
+  const result = await spendBoost(session.user.id, itemId);
   if (result.status === "gone") return { ok: false as const, error: "That song isn't in the queue any more." };
-  if (result.status === "cooldown") return { ok: false as const, error: "You've used your boost. It comes back a while after you use it." };
+  if (result.status === "empty") return { ok: false as const, error: "You're out of boosts. Your free one comes back 5.5 hours after you use it." };
   refresh();
   return { ok: true as const, boostId: result.id };
 }
@@ -145,11 +146,12 @@ export async function seekAction(spaceId: string, seconds: number) {
   return { ok: true as const };
 }
 
-// The host's player reports that a song finished: start the next one.
-export async function songEndedAction(spaceId: string, itemId: string) {
+// The host's player reports that a song finished (or YouTube couldn't play
+// it): start the next one.
+export async function songEndedAction(spaceId: string, itemId: string, unplayable = false) {
   const session = await getSession();
   if (!session) return { ok: false as const };
-  const ok = await playNext(spaceId, session.user.id, undefined, itemId);
+  const ok = await playNext(spaceId, session.user.id, undefined, { itemId, unplayable: unplayable === true });
   if (ok) refresh();
   return { ok };
 }
