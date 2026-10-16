@@ -12,7 +12,8 @@
     "typecheck": "prisma generate && tsc --noEmit",
     "migrate": "prisma migrate dev && prisma generate",
     "studio": "prisma studio",
-    "boosts": "tsx --env-file-if-exists=../../.env scripts/boosts.ts"
+    "boosts": "tsx --env-file-if-exists=../../.env scripts/boosts.ts",
+    "coupon": "tsx --env-file-if-exists=../../.env scripts/coupon.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

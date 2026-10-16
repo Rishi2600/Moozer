@@ -61,6 +61,16 @@ export async function spendBoost(userId: string, itemId: string) {
   });
 }
 
+// Adds bought or given boosts, from an order (once: the ledger refuses a
+// second credit for the same order).
+export async function creditWallet(
+  tx: Prisma.TransactionClient,
+  credit: { userId: string; boosts: number; reason: "purchase" | "grant"; orderId: string }
+) {
+  await lockWallet(tx, credit.userId);
+  await tx.boostLedger.create({ data: { userId: credit.userId, delta: credit.boosts, reason: credit.reason, orderId: credit.orderId } });
+}
+
 // Undo from the toast: within a minute, while the song is still queued. The
 // trigger puts the boost back exactly as it was spent.
 export async function undoBoost(boostId: string, userId: string) {
