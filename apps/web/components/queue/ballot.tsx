@@ -4,6 +4,7 @@ import { useCallback, useOptimistic, useRef, useState, useTransition } from "rea
 
 import { boostAction, playNextAction, removeSongAction, undoBoostAction, voteAction } from "@/app/(app)/s/[slug]/actions";
 import { useLive } from "@/components/space/live";
+import { GetBoostsDialog } from "@/components/boosts/get-boosts-dialog";
 import { RemovePersonDialog, type Person } from "@/components/space/remove-person-dialog";
 import { Toast } from "@/components/ui/toast";
 import { BOOST_VOTES } from "@/lib/queue/boost";
@@ -95,7 +96,14 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
   useFlip(list, optimistic.map((item) => item.id).join(","));
   return (
     <div ref={list} className="contents">
-      <QueueCard count={optimistic.length} status={canVote ? <BoostStatus balance={balance} nextFreeAt={viewer.wallet.nextFreeAt} /> : undefined}>
+      <QueueCard count={optimistic.length} status={
+          canVote ? (
+            <span className="flex items-center gap-3">
+              <BoostStatus balance={balance} nextFreeAt={viewer.wallet.nextFreeAt} />
+              <GetBoostsDialog compact />
+            </span>
+          ) : undefined
+        }>
         {optimistic.map((item, index) => (
           <QueueRow
             key={item.id}
