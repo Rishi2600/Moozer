@@ -14,4 +14,5 @@ export type ServerMessage =
 // Close codes the browser can act on.
 export const CLOSE = {
   badTicket: 4001, // expired or forged: ask the website for a new one
+  removed: 4003, // the host removed this person from the space
 } as const;

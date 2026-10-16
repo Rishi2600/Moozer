@@ -1,6 +1,11 @@
-import type { Person, ServerMessage, SpaceStatus } from "@moozer/protocol/messages";
+import { CLOSE, type Person, type ServerMessage, type SpaceStatus } from "@moozer/protocol/messages";
 
-export type Member = { userId: string; name: string; send: (message: ServerMessage) => void };
+export type Member = {
+  userId: string;
+  name: string;
+  send: (message: ServerMessage) => void;
+  close?: (code: number, reason: string) => void;
+};
 type Change = { slug?: string; status?: SpaceStatus };
 type Room = { members: Set<Member>; pending: Change | null; timer: ReturnType<typeof setTimeout> | null };
 
@@ -44,6 +49,15 @@ export class Rooms {
       room.timer = null;
       for (const member of room.members) member.send(message);
     }, this.batchMs);
+  }
+
+  // The host removed someone: close every screen they have open here.
+  remove(spaceId: string, userId: string) {
+    for (const member of [...(this.rooms.get(spaceId)?.members ?? [])]) {
+      if (member.userId !== userId) continue;
+      member.close?.(CLOSE.removed, "removed from the space");
+      this.leave(spaceId, member);
+    }
   }
 
   // Unique people, in the order they arrived; several tabs count once.

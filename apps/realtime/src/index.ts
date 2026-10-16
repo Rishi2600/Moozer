@@ -61,6 +61,7 @@ server.on("upgrade", (req, socket, head) => {
       userId: ticket.userId,
       name: ticket.name,
       send: (message: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(message)),
+      close: (code, reason) => ws.close(code, reason),
     };
     alive.add(ws);
     ws.on("pong", () => alive.add(ws));
@@ -82,7 +83,10 @@ const heartbeat = setInterval(() => {
   }
 }, 30_000);
 
-const stopListening = listenForChanges(databaseUrl, ({ spaceId, slug, status }) => rooms.changed(spaceId, { slug, status }));
+const stopListening = listenForChanges(databaseUrl, ({ spaceId, slug, status, removedUserId }) => {
+  if (removedUserId) rooms.remove(spaceId, removedUserId);
+  rooms.changed(spaceId, { slug, status });
+});
 
 server.listen(port, () => console.log(`realtime: listening on :${port}`));
 

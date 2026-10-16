@@ -67,3 +67,20 @@ describe("Rooms", () => {
     expect(rooms.stats()).toEqual({ spaces: 0, connections: 0 });
   });
 });
+
+describe("Removing someone", () => {
+  it("closes their screens and updates presence", () => {
+    const rooms = new Rooms();
+    const closed: number[] = [];
+    const maya = member("maya");
+    const leo1 = member("leo"), leo2 = member("leo");
+    leo1.m.close = (code) => closed.push(code);
+    leo2.m.close = (code) => closed.push(code);
+    rooms.join("s1", maya.m);
+    rooms.join("s1", leo1.m);
+    rooms.join("s1", leo2.m);
+    rooms.remove("s1", "leo");
+    expect(closed).toEqual([4003, 4003]);
+    expect(maya.inbox.at(-1)).toMatchObject({ here: 1 });
+  });
+});

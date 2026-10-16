@@ -1,6 +1,6 @@
 "use client";
 
-import type { Person, ServerMessage } from "@moozer/protocol/messages";
+import { CLOSE, type Person, type ServerMessage } from "@moozer/protocol/messages";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
@@ -67,8 +67,14 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
           refresh();
         }
       };
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         socket = null;
+        if (event.code === CLOSE.removed) {
+          // The host removed this person: show why instead of reconnecting.
+          stopped = true;
+          router.refresh();
+          return;
+        }
         if (!stopped) scheduleRetry();
       };
     }
