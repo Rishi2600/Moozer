@@ -3,19 +3,20 @@
 import { Plus, Tag, X, Zap } from "lucide-react";
 import { useCallback, useId, useState, useTransition } from "react";
 
-import { priceAction, redeemAction } from "@/app/(app)/boosts/actions";
+import { confirmPurchaseAction, priceAction, redeemAction, startPurchaseAction } from "@/app/(app)/boosts/actions";
 import { FormError } from "@/components/auth/form-error";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Toast } from "@/components/ui/toast";
 import { BOOST_VOTES } from "@/lib/queue/boost";
+import { loadCheckout, openCheckout } from "@/lib/payments/checkout";
 import { formatRupees, PACKS, type PackId } from "@/lib/payments/packs";
 
 type Applied = { code: string; amountPaise: number; discountPaise: number };
 
 // Pick 1, 3 or 10 boosts; a code can take money off (a 100% code makes it
-// free, with no payment at all). Paying arrives with Razorpay.
+// free, with no payment at all). Paying opens Razorpay Checkout.
 export function GetBoostsDialog({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [packId, setPackId] = useState<PackId>("trio");
@@ -63,6 +64,38 @@ export function GetBoostsDialog({ compact = false }: { compact?: boolean }) {
       setOpen(false);
       reset();
       setDone(`${result.boosts} ${result.boosts === 1 ? "boost" : "boosts"} added`);
+    });
+  }
+
+  function pay() {
+    setError(null);
+    start(async () => {
+      const started = await startPurchaseAction(packId, applied?.code);
+      if (!started.ok) return setError(started.error);
+      try {
+        await loadCheckout();
+      } catch {
+        return setError("Couldn't open the payment window. Check your connection and try again.");
+      }
+      // Our dialog closes first: its focus lock would block clicks in Razorpay's window.
+      setOpen(false);
+      reset();
+      const label = `${started.boosts} ${started.boosts === 1 ? "boost" : "boosts"}`;
+      openCheckout({
+        key: started.keyId,
+        order_id: started.orderId,
+        amount: started.amountPaise,
+        currency: "INR",
+        name: "Moozer",
+        description: label,
+        prefill: { name: started.name, email: started.email },
+        theme: { color: "#ff6200" },
+        handler: (response) => {
+          setDone("Payment received. Adding your boosts…");
+          void confirmPurchaseAction(response).then((confirmed) => setDone(confirmed.ok ? `${label} added` : confirmed.error));
+        },
+        modal: { ondismiss: () => setDone("Payment closed. Nothing was charged.") },
+      });
     });
   }
 
@@ -160,8 +193,10 @@ export function GetBoostsDialog({ compact = false }: { compact?: boolean }) {
               </Button>
             ) : (
               <>
-                <Button size="lg" disabled>Pay {formatRupees(total)}</Button>
-                <p className="text-center text-body-sm text-muted-foreground">Paying by UPI or card is coming next.</p>
+                <Button size="lg" onClick={pay} disabled={pending}>
+                  {pending ? "Opening…" : `Pay ${formatRupees(total)}`}
+                </Button>
+                <p className="text-center text-body-sm text-muted-foreground">UPI, cards, netbanking and wallets, through Razorpay.</p>
               </>
             )}
           </div>
