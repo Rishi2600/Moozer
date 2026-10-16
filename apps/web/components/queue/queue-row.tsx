@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/songs/links";
 import { cn } from "@/lib/utils";
 
+import { Dedication } from "./dedication";
 import { SongThumb } from "./song-thumb";
 
 export type QueueRowItem = {
@@ -9,6 +10,7 @@ export type QueueRowItem = {
   title: string;
   thumbnailUrl: string;
   durationSeconds: number | null;
+  dedication: string | null;
   votes: number;
   hasVoted: boolean;
   addedBy: { name: string };
@@ -52,6 +54,7 @@ export function QueueRow({
           <span className="truncate">Added by {item.addedBy.name}</span>
           {item.durationSeconds !== null && <span className="tabular-nums">{formatDuration(item.durationSeconds)}</span>}
         </span>
+        <Dedication text={item.dedication} className="text-body-sm" />
       </div>
       <Badge variant="neutral" className="hidden rounded-md sm:inline-flex">YouTube</Badge>
       {menu}

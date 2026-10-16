@@ -3,6 +3,7 @@ import { Disc3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/songs/links";
 
+import { Dedication } from "./dedication";
 import { ProgressBar } from "./progress-bar";
 import { SongThumb } from "./song-thumb";
 
@@ -10,6 +11,7 @@ type Playing = {
   title: string;
   thumbnailUrl: string;
   durationSeconds: number | null;
+  dedication: string | null;
   addedBy: { name: string };
   anchorAt: Date | null;
   pausedAtMs: number | null;
@@ -48,6 +50,7 @@ export function NowPlayingCard({
                 Added by {playing.addedBy.name}
                 {playing.durationSeconds !== null && <> · <span className="tabular-nums">{formatDuration(playing.durationSeconds)}</span></>}
               </span>
+              <Dedication text={playing.dedication} className="text-body-md" />
             </div>
             {controls}
           </div>

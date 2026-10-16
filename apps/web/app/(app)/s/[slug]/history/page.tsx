@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Avatar } from "@/components/avatar";
 import { LocalTime } from "@/components/local-time";
+import { Dedication } from "@/components/queue/dedication";
 import { SongThumb } from "@/components/queue/song-thumb";
 import { HISTORY_PAGE_SIZE, getHistory } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
@@ -66,6 +67,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
                         <span className="truncate text-body-sm text-muted-foreground">
                           {[item.channel, item.durationSeconds !== null ? formatDuration(item.durationSeconds) : null].filter(Boolean).join(" · ")}
                         </span>
+                        <Dedication text={item.dedication} className="text-body-sm" />
                       </div>
                     </div>
                   </td>

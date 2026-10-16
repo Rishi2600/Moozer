@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Logo } from "@/components/logo";
+import { Dedication } from "@/components/queue/dedication";
 import { SongThumb } from "@/components/queue/song-thumb";
 import { SpaceLive } from "@/components/space/live";
 import { OpensAt } from "@/components/local-time";
@@ -60,7 +61,10 @@ export default async function TvDisplayPage({ params }: PageProps<"/s/[slug]/dis
                 <div className="flex flex-col gap-1">
                   <span className="text-title-sm tracking-wide text-primary">Now playing</span>
                   <p className="line-clamp-2 text-[2.5rem] leading-tight font-extrabold text-foreground">{nowPlaying.title}</p>
-                  <p className="text-headline-md text-muted-foreground">Queued by {nowPlaying.addedBy.name}</p>
+                  <p className="flex min-w-0 items-center gap-5 text-headline-md text-muted-foreground">
+                    <span className="shrink-0">Queued by {nowPlaying.addedBy.name}</span>
+                    <Dedication text={nowPlaying.dedication} />
+                  </p>
                 </div>
               </>
             ) : (
@@ -93,6 +97,7 @@ export default async function TvDisplayPage({ params }: PageProps<"/s/[slug]/dis
                       )}
                       <span className="truncate text-title-sm text-foreground xl:text-headline-md">{item.title}</span>
                       <span className="truncate text-body-md text-muted-foreground">Added by {item.addedBy.name}</span>
+                      <Dedication text={item.dedication} className="text-body-md" />
                     </div>
                   </li>
                 ))}

@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { positionMs } from "@/lib/queue/playback";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -35,13 +36,14 @@ type Props = {
   anchorAt: Date | null;
   pausedAtMs: number | null;
   muted?: boolean; // the TV display follows along silently
+  className?: string;
   onEnded?: (itemId: string) => void;
   onError?: (itemId: string) => void;
 };
 
 // Plays the space's current song at the shared position and follows pause,
 // resume and song changes. Corrects drift over 3 seconds.
-export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = false, onEnded, onError }: Props) {
+export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = false, className, onEnded, onError }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const player = useRef<YT.Player | null>(null);
   const [ready, setReady] = useState(false);
@@ -121,7 +123,7 @@ export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = f
   }, [ready, anchorMs, pausedAtMs]);
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+    <div className={cn("relative aspect-video w-full overflow-hidden rounded-xl bg-black", className)}>
       {/* A click in the video would pause it here only, out of step with everyone. */}
       <div ref={box} className="pointer-events-none absolute inset-0 [&>iframe]:size-full" />
       {blocked && (
