@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { Logo } from "@/components/logo";
 import { Dedication } from "@/components/queue/dedication";
+import { ReactionLayer } from "@/components/queue/reactions";
 import { SongThumb } from "@/components/queue/song-thumb";
 import { SpaceLive } from "@/components/space/live";
 import { OpensAt } from "@/components/local-time";
@@ -54,9 +55,10 @@ export default async function TvDisplayPage({ params }: PageProps<"/s/[slug]/dis
         </header>
 
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,65fr)_minmax(0,35fr)] gap-8">
-          <section className="flex min-h-0 flex-col gap-5 rounded-3xl bg-card p-6 shadow-sm">
+          <section className="relative flex min-h-0 flex-col gap-5 rounded-3xl bg-card p-6 shadow-sm">
             {nowPlaying ? (
               <>
+                {space.status === "live" && <ReactionLayer size="lg" />}
                 <TvPlayer playing={nowPlaying} />
                 <div className="flex flex-col gap-1">
                   <span className="text-title-sm tracking-wide text-primary">Now playing</span>

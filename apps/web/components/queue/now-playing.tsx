@@ -18,16 +18,21 @@ type Playing = {
 } | null;
 
 // Large on the host's screen; the controls slot holds Play next and pause.
-// `media` replaces the thumbnail (the host's YouTube player).
+// `media` replaces the thumbnail (the host's YouTube player); `overlay` sits
+// on top of it (floating reactions) and `reactions` below the progress bar.
 export function NowPlayingCard({
   playing,
   controls,
   media,
+  overlay,
+  reactions,
   emptyHint,
 }: {
   playing: Playing;
   controls?: React.ReactNode;
   media?: React.ReactNode;
+  overlay?: React.ReactNode;
+  reactions?: React.ReactNode;
   emptyHint: string;
 }) {
   return (
@@ -39,6 +44,7 @@ export function NowPlayingCard({
             <Badge variant="live" className="pointer-events-none absolute top-3 left-3 bg-card/90 backdrop-blur-sm">
               {playing.pausedAtMs !== null ? "Paused" : "Now playing"}
             </Badge>
+            {overlay}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-col gap-0.5">
@@ -55,6 +61,7 @@ export function NowPlayingCard({
             {controls}
           </div>
           <ProgressBar anchorAt={playing.anchorAt} pausedAtMs={playing.pausedAtMs} durationSeconds={playing.durationSeconds} />
+          {reactions}
         </>
       ) : (
         <div className="flex flex-col items-center gap-3 py-6 text-center">

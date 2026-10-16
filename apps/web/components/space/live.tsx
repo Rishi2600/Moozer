@@ -3,7 +3,7 @@
 import { Bucket, REACTION_LIMIT } from "@moozer/protocol/limit";
 import { CLOSE, type ClientMessage, type Person, type Reaction, type ServerMessage } from "@moozer/protocol/messages";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { realtimeTicketAction } from "@/app/(app)/s/[slug]/actions";
 
@@ -133,21 +133,24 @@ export function SpaceLive({ spaceId, slug, ticket, children }: { spaceId: string
     };
   }, [spaceId, router, listeners]);
 
+  const reconnect = useCallback(() => reconnectNow.current(), []);
+  const react = useCallback(
+    (emoji: Reaction) => {
+      // Shown here at once; the server relays it to everyone else.
+      if (reactionBucket.take() && sendNow.current({ type: "react", emoji })) for (const listener of listeners) listener({ emoji, from: null });
+    },
+    [listeners, reactionBucket]
+  );
+  const onReaction = useCallback(
+    (listener: (event: ReactionEvent) => void) => {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+    [listeners]
+  );
+
   return (
-    <LiveContext.Provider
-      value={{
-        ...state,
-        reconnect: () => reconnectNow.current(),
-        react: (emoji) => {
-          // Shown here at once; the server relays it to everyone else.
-          if (reactionBucket.take() && sendNow.current({ type: "react", emoji })) for (const listener of listeners) listener({ emoji, from: null });
-        },
-        onReaction: (listener) => {
-          listeners.add(listener);
-          return () => void listeners.delete(listener);
-        },
-      }}
-    >
+    <LiveContext.Provider value={{ ...state, reconnect, react, onReaction }}>
       {children}
     </LiveContext.Provider>
   );

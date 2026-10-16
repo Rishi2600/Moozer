@@ -7,6 +7,7 @@ import { Ballot } from "@/components/queue/ballot";
 import { HostPlayer, PauseButton, SeekButton } from "@/components/queue/host-player";
 import { HostShortcuts } from "@/components/queue/host-shortcuts";
 import { PlayNextButton } from "@/components/queue/play-next-button";
+import { ReactionBar, ReactionLayer } from "@/components/queue/reactions";
 import { SongNudge } from "@/components/queue/song-nudge";
 import { EndedCard } from "@/components/space/ended-card";
 import { InviteCard } from "@/components/space/invite-card";
@@ -53,6 +54,8 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
         <NowPlayingCard
           playing={nowPlaying}
           media={isHost && nowPlaying ? <HostPlayer spaceId={space.id} playing={nowPlaying} /> : undefined}
+          overlay={live ? <ReactionLayer /> : undefined}
+          reactions={live ? <ReactionBar /> : undefined}
           controls={
             isHost && live ? (
               <div className="flex items-center gap-2">
