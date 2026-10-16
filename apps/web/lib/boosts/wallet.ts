@@ -71,6 +71,14 @@ export async function creditWallet(
   await tx.boostLedger.create({ data: { userId: credit.userId, delta: credit.boosts, reason: credit.reason, orderId: credit.orderId } });
 }
 
+// A money refund after the boosts were credited takes them back (once per
+// order). The balance can go below zero if they were already spent; spending
+// then waits until it's back above.
+export async function reverseWallet(tx: Prisma.TransactionClient, debit: { userId: string; boosts: number; orderId: string }) {
+  await lockWallet(tx, debit.userId);
+  await tx.boostLedger.create({ data: { userId: debit.userId, delta: -debit.boosts, reason: "reversal", orderId: debit.orderId } });
+}
+
 // Undo from the toast: within a minute, while the song is still queued. The
 // trigger puts the boost back exactly as it was spent.
 export async function undoBoost(boostId: string, userId: string) {
