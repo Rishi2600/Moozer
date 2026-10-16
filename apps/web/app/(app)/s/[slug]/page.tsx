@@ -5,6 +5,7 @@ import { AddSongCard } from "@/components/queue/add-song-card";
 import { AddSongSheet } from "@/components/queue/add-song-sheet";
 import { Ballot } from "@/components/queue/ballot";
 import { HostPlayer, PauseButton, SeekButton } from "@/components/queue/host-player";
+import { HostShortcuts } from "@/components/queue/host-shortcuts";
 import { PlayNextButton } from "@/components/queue/play-next-button";
 import { EndedCard } from "@/components/space/ended-card";
 import { InviteCard } from "@/components/space/invite-card";
@@ -62,6 +63,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
                   </>
                 )}
                 <PlayNextButton spaceId={space.id} playing={nowPlaying !== null} queued={queue.length} />
+                <HostShortcuts spaceId={space.id} playing={nowPlaying !== null} paused={nowPlaying?.pausedAtMs != null} queued={queue.length} />
               </div>
             ) : undefined
           }
