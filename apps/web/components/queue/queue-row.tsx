@@ -48,7 +48,7 @@ export function QueueRow({
       <SongThumb src={item.thumbnailUrl} className="w-16 sm:w-20" />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         {isLeader && (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <Badge variant="next" className="border border-border bg-cream-container text-orange-deep">Plays next</Badge>
             {leadBy && <span className="whitespace-nowrap text-body-sm text-muted-foreground tabular-nums">Leads by {leadBy}</span>}
           </span>

@@ -23,10 +23,12 @@ export async function InviteCard({ link, code }: { link: string; code: string })
         </span>
         <CopyButton text={link} />
       </div>
-      <p className="text-body-sm text-muted-foreground">
-        Anyone with the link can add songs and vote. Join code{" "}
-        <span className="font-semibold tracking-wider text-foreground tabular-nums">{code}</span>
-      </p>
+      <div className="flex flex-col gap-1 text-body-sm text-muted-foreground">
+        <p>Anyone with the link can add songs and vote.</p>
+        <p>
+          Join code <span className="font-semibold tracking-wider whitespace-nowrap text-foreground tabular-nums">{code}</span>
+        </p>
+      </div>
     </section>
   );
 }

@@ -3,8 +3,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 // The queue tab's shape while it loads (the space header is already shown).
 export default function Loading() {
   return (
-    <div className="grid grid-cols-1 gap-gutter-desktop lg:grid-cols-12" role="status" aria-label="Loading the queue">
-      <div className="flex flex-col gap-gutter-desktop lg:col-span-8">
+    <div className="grid grid-cols-1 gap-gutter-desktop lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_24rem]" role="status" aria-label="Loading the queue">
+      <div className="flex min-w-0 flex-col gap-gutter-desktop">
         <div className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-sm">
           <Skeleton className="aspect-video w-full rounded-xl" />
           <Skeleton className="h-4 w-2/3" />
@@ -25,7 +25,7 @@ export default function Loading() {
           ))}
         </div>
       </div>
-      <div className="hidden flex-col gap-gutter-desktop lg:col-span-4 lg:flex">
+      <div className="hidden flex-col gap-gutter-desktop lg:flex">
         <Skeleton className="h-28 rounded-2xl" />
         <Skeleton className="h-36 rounded-2xl" />
       </div>

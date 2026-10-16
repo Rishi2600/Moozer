@@ -50,8 +50,8 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
           : "The host starts the music. Add a song or vote for one meanwhile.";
 
   return (
-    <div className="grid grid-cols-1 gap-gutter-desktop max-lg:pb-20 lg:grid-cols-12">
-      <div className="flex flex-col gap-gutter-desktop lg:col-span-8">
+    <div className="grid grid-cols-1 gap-gutter-desktop max-lg:pb-20 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="flex min-w-0 flex-col gap-gutter-desktop">
         <NowPlayingCard
           playing={nowPlaying}
           media={isHost && nowPlaying ? <HostPlayer spaceId={space.id} playing={nowPlaying} /> : undefined}
@@ -80,7 +80,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
           viewer={{ userId: user.id, name: user.name, isHost, spaceId: space.id, live, wallet }}
         />
       </div>
-      <aside className="flex flex-col gap-gutter-desktop lg:col-span-4" aria-label="Space tools">
+      <aside className="flex flex-col gap-gutter-desktop" aria-label="Space tools">
         <InviteCard link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
         <InTheRoomCard host={isHost ? { spaceId: space.id, userId: user.id } : undefined} />
         <AddSongCard spaceId={space.id} />
