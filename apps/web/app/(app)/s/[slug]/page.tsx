@@ -7,6 +7,7 @@ import { Ballot } from "@/components/queue/ballot";
 import { HostPlayer, PauseButton, SeekButton } from "@/components/queue/host-player";
 import { HostShortcuts } from "@/components/queue/host-shortcuts";
 import { PlayNextButton } from "@/components/queue/play-next-button";
+import { SongNudge } from "@/components/queue/song-nudge";
 import { EndedCard } from "@/components/space/ended-card";
 import { InviteCard } from "@/components/space/invite-card";
 import { InTheRoomCard } from "@/components/space/presence";
@@ -77,6 +78,14 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
         <AddSongCard spaceId={space.id} />
       </aside>
       <AddSongSheet spaceId={space.id} />
+      {!isHost && (
+        <SongNudge
+          viewerId={user.id}
+          snapshot={{ playing: nowPlaying && pick(nowPlaying), leader: queue[0] ? pick(queue[0]) : null, queuedIds: queue.map((item) => item.id) }}
+        />
+      )}
     </div>
   );
 }
+
+const pick = ({ id, addedById, title }: { id: string; addedById: string; title: string }) => ({ id, addedById, title });
