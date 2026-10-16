@@ -4,6 +4,7 @@ import { Prisma, prisma } from "@moozer/db";
 import { cache } from "react";
 
 import { FINISHED, setPlayback } from "@/lib/queue/data";
+import { ballotVotes } from "@/lib/queue/boost";
 import { sortQueue } from "@/lib/queue/order";
 
 import { generateJoinCode, generateSlug, type JoinTarget } from "./codes";
@@ -169,7 +170,7 @@ export async function openSpaceNow(spaceId: string, hostId: string) {
   return count === 1;
 }
 
-// Takes someone out of a space for good: their membership, their votes and
+// Takes someone out of a space for good: their membership, votes, boosts and
 // the songs they queued go, and they can't rejoin from the link or code.
 export async function removeFromSpace(spaceId: string, hostId: string, userId: string) {
   if (userId === hostId) return false;
@@ -177,6 +178,7 @@ export async function removeFromSpace(spaceId: string, hostId: string, userId: s
     const space = await tx.space.findFirst({ where: { id: spaceId, hostId, status: OPEN }, select: { id: true } });
     if (!space) return false;
     await tx.vote.deleteMany({ where: { userId, queueItem: { spaceId, status: "queued" } } });
+    await tx.boost.deleteMany({ where: { userId, queueItem: { spaceId, status: "queued" } } });
     await tx.queueItem.deleteMany({ where: { spaceId, addedById: userId, status: "queued" } });
     await tx.spaceMember.deleteMany({ where: { spaceId, userId } });
     // Last, so the notification it sends comes after everything above.
@@ -224,10 +226,10 @@ export async function getSpacePreview(slug: string) {
     }),
     prisma.queueItem.findMany({
       where: { spaceId: space.id, status: "queued" },
-      select: { id: true, title: true, thumbnailUrl: true, addedAt: true, addedBy: { select: { name: true } }, _count: { select: { votes: true } } },
+      select: { id: true, title: true, thumbnailUrl: true, addedAt: true, addedBy: { select: { name: true } }, _count: { select: { votes: true, boosts: true } } },
     }),
   ]);
-  const queue = sortQueue(queued.map(({ _count, ...q }) => ({ ...q, votes: _count.votes })));
+  const queue = sortQueue(queued.map(({ _count, ...q }) => ({ ...q, votes: ballotVotes(_count.votes, _count.boosts) })));
   return { space, nowPlaying, queue, total: queue.length };
 }
 

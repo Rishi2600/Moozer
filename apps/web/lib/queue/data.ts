@@ -4,6 +4,7 @@ import { Prisma, prisma } from "@moozer/db";
 
 import type { SongDetails } from "@/lib/songs/lookup";
 
+import { ballotVotes, BOOST_UNDO_MS, boostReadyAt } from "./boost";
 import { leadMargin, sortQueue } from "./order";
 import { positionMs, resumedAnchor, seekedState } from "./playback";
 
@@ -46,13 +47,33 @@ export async function getQueue(spaceId: string, userId: string) {
     }),
     prisma.queueItem.findMany({
       where: { spaceId, status: "queued" },
-      select: { ...song, _count: { select: { votes: true } }, votes: { where: { userId }, select: { userId: true } } },
+      select: {
+        ...song,
+        _count: { select: { votes: true } },
+        votes: { where: { userId }, select: { userId: true } },
+        boosts: { orderBy: { createdAt: "asc" }, select: { user: { select: { name: true } } } },
+      },
     }),
   ]);
   const queue = sortQueue(
-    queued.map(({ _count, votes, ...item }) => ({ ...item, votes: _count.votes, hasVoted: votes.length > 0 }))
+    queued.map(({ _count, votes, boosts, ...item }) => ({
+      ...item,
+      votes: ballotVotes(_count.votes, boosts.length),
+      hasVoted: votes.length > 0,
+      boostedBy: boosts.map((b) => b.user.name),
+    }))
   );
   return { nowPlaying, queue, leadBy: leadMargin(queue) };
+}
+
+// The viewer's boost in this space: ready now (readyAt null) or when it's back.
+export async function getBoostState(spaceId: string, userId: string) {
+  const last = await prisma.boost.findFirst({
+    where: { spaceId, userId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  return { readyAt: boostReadyAt(last?.createdAt ?? null) };
 }
 
 export type QueueView = Awaited<ReturnType<typeof getQueue>>;
@@ -66,7 +87,7 @@ export async function findActiveCopy(spaceId: string, videoId: string, userId?: 
       title: true,
       thumbnailUrl: true,
       status: true,
-      _count: { select: { votes: true } },
+      _count: { select: { votes: true, boosts: true } },
       votes: { where: { userId: userId ?? "" }, select: { userId: true } },
     },
   });
@@ -76,7 +97,7 @@ export async function findActiveCopy(spaceId: string, videoId: string, userId?: 
       title: item.title,
       thumbnailUrl: item.thumbnailUrl,
       playing: item.status === "playing",
-      votes: item._count.votes,
+      votes: ballotVotes(item._count.votes, item._count.boosts),
       hasVoted: item.votes.length > 0,
     }
   );
@@ -160,9 +181,9 @@ export async function playNext(spaceId: string, hostId: string, itemId?: string,
     }
     const queued = await tx.queueItem.findMany({
       where: { spaceId, status: "queued", ...(itemId ? { id: itemId } : {}) },
-      select: { id: true, addedAt: true, _count: { select: { votes: true } } },
+      select: { id: true, addedAt: true, _count: { select: { votes: true, boosts: true } } },
     });
-    const next = sortQueue(queued.map((q) => ({ id: q.id, addedAt: q.addedAt, votes: q._count.votes })))[0];
+    const next = sortQueue(queued.map((q) => ({ id: q.id, addedAt: q.addedAt, votes: ballotVotes(q._count.votes, q._count.boosts) })))[0];
     if (itemId && !next) return false;
     await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: FINISHED });
     if (next) {
@@ -219,6 +240,36 @@ export async function seek(spaceId: string, hostId: string, deltaMs: number) {
     await tx.queueItem.update({ where: { id: playing.id }, data: seekedState(playing, deltaMs, playing.durationSeconds) });
     return true;
   });
+}
+
+// Spends the member's boost on a queued song (+3 votes) if it's ready. A lock
+// per person and space makes a double tap spend one boost, not two.
+export async function boostSong(itemId: string, userId: string) {
+  return prisma.$transaction(async (tx) => {
+    const item = await tx.queueItem.findFirst({
+      where: { id: itemId, status: "queued", space: { status: OPEN, members: { some: { userId } } } },
+      select: { id: true, spaceId: true },
+    });
+    if (!item) return { status: "gone" as const };
+    await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`boost:${item.spaceId}:${userId}`}))`;
+    const last = await tx.boost.findFirst({
+      where: { spaceId: item.spaceId, userId },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+    const readyAt = boostReadyAt(last?.createdAt ?? null);
+    if (readyAt) return { status: "cooldown" as const, readyAt };
+    const boost = await tx.boost.create({ data: { spaceId: item.spaceId, userId, queueItemId: item.id }, select: { id: true } });
+    return { status: "boosted" as const, id: boost.id };
+  });
+}
+
+// Undo from the toast: within a minute, while the song is still queued.
+export async function undoBoost(boostId: string, userId: string) {
+  const { count } = await prisma.boost.deleteMany({
+    where: { id: boostId, userId, createdAt: { gt: new Date(Date.now() - BOOST_UNDO_MS) }, queueItem: { status: "queued" } },
+  });
+  return count === 1;
 }
 
 export const HISTORY_PAGE_SIZE = 8;

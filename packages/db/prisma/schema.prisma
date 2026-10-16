@@ -26,6 +26,7 @@ model User {
   removedFrom   SpaceRemoval[]
   addedSongs    QueueItem[]
   votes         Vote[]
+  boosts        Boost[]
 
   @@map("user")
 }
@@ -117,6 +118,7 @@ model Space {
   members      SpaceMember[]
   removed      SpaceRemoval[]
   queue        QueueItem[]
+  boosts       Boost[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   endedAt      DateTime?
@@ -197,6 +199,7 @@ model QueueItem {
   anchorAt        DateTime?
   pausedAtMs      Int?
   votes           Vote[]
+  boosts          Boost[]
 
   @@index([spaceId, status, addedAt])
   @@index([addedById])
@@ -214,4 +217,23 @@ model Vote {
   @@id([queueItemId, userId])
   @@index([userId])
   @@map("vote")
+}
+
+// A boost adds 3 to a queued song's votes. Everyone gets one per space, back
+// 5.5 hours after they use it (counted from their latest boost here). Deleting
+// the song (removed, or its adder removed) deletes its boosts, which refunds them.
+model Boost {
+  id          String    @id @default(cuid())
+  spaceId     String
+  space       Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queueItemId String
+  queueItem   QueueItem @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([spaceId, userId, createdAt])
+  @@index([queueItemId])
+  @@index([userId])
+  @@map("boost")
 }

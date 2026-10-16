@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 
-import { addSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote } from "@/lib/queue/data";
+import { addSong, boostSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote, undoBoost } from "@/lib/queue/data";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
 import { cleanDedication } from "@/lib/songs/dedication";
@@ -69,6 +69,27 @@ export async function playNextAction(spaceId: string, itemId?: string) {
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
   if (!(await playNext(spaceId, session.user.id, itemId))) {
     return { ok: false as const, error: "Only the host can change what's playing, and only while the space is live." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// Anyone in the space: spend your boost (+3 votes) on a queued song.
+export async function boostAction(itemId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again to boost." };
+  const result = await boostSong(itemId, session.user.id);
+  if (result.status === "gone") return { ok: false as const, error: "That song isn't in the queue any more." };
+  if (result.status === "cooldown") return { ok: false as const, error: "You've used your boost. It comes back a while after you use it." };
+  refresh();
+  return { ok: true as const, boostId: result.id };
+}
+
+export async function undoBoostAction(boostId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await undoBoost(boostId, session.user.id))) {
+    return { ok: false as const, error: "That boost can't be undone any more." };
   }
   refresh();
   return { ok: true as const };
