@@ -27,6 +27,7 @@ model User {
   addedSongs    QueueItem[]
   votes         Vote[]
   boosts        Boost[]
+  boostLedger   BoostLedger[]
 
   @@map("user")
 }
@@ -119,6 +120,7 @@ model Space {
   removed      SpaceRemoval[]
   queue        QueueItem[]
   boosts       Boost[]
+  boostLedger  BoostLedger[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   endedAt      DateTime?
@@ -219,9 +221,9 @@ model Vote {
   @@map("vote")
 }
 
-// A boost adds 3 to a queued song's votes. Everyone gets one per space, back
-// 5.5 hours after they use it (counted from their latest boost here). Deleting
-// the song (removed, or its adder removed) deletes its boosts, which refunds them.
+// A boost placed on a song: +3 to its votes, from whom. Paid for by a
+// "spend" row in the boost wallet (boost_ledger). Deleting a boost refunds it
+// (a database trigger), unless it's settled: its song started playing.
 model Boost {
   id          String    @id @default(cuid())
   spaceId     String
@@ -230,10 +232,54 @@ model Boost {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   queueItemId String
   queueItem   QueueItem @relation(fields: [queueItemId], references: [id], onDelete: Cascade)
+  settled     Boolean   @default(false) // its song started playing: no refund
   createdAt   DateTime  @default(now())
 
   @@index([spaceId, userId, createdAt])
   @@index([queueItemId])
   @@index([userId])
   @@map("boost")
+}
+
+enum LedgerReason {
+  refill // the free boost is back (5.5 hours after it was used)
+  purchase // bought with money
+  grant // given: a 100% coupon, or the dev script
+  spend // placed on a song
+  refund // its boost was deleted (see cause)
+  reversal // money refunded after boosts were credited
+}
+
+enum RefundCause {
+  undo
+  song_removed
+  person_removed
+  space_ended
+  unplayable
+}
+
+// Each person's boost wallet: one row per change, and the balance is the sum
+// of delta. The free boost is tracked through usedFree (on spends and refunds)
+// and refill rows, so its 5.5-hour timer knows when it was used. Only
+// lib/boosts/wallet.ts writes here (plus the refund trigger), under a lock per
+// person. seq orders rows written in the same transaction.
+model BoostLedger {
+  id        String       @id @default(cuid())
+  seq       BigInt       @default(autoincrement())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int
+  reason    LedgerReason
+  usedFree  Boolean      @default(false)
+  cause     RefundCause?
+  // Where it happened, kept after the boost or song is gone.
+  boostId   String?
+  spaceId   String?
+  space     Space?       @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  songTitle String?
+  createdAt DateTime     @default(now())
+
+  @@index([userId, seq])
+  @@index([spaceId])
+  @@map("boost_ledger")
 }
