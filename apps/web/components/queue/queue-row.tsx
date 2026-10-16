@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/songs/links";
 import { cn } from "@/lib/utils";
 
+import { BoostChip } from "./boost";
 import { Dedication } from "./dedication";
 import { SongThumb } from "./song-thumb";
 
@@ -11,7 +12,8 @@ export type QueueRowItem = {
   thumbnailUrl: string;
   durationSeconds: number | null;
   dedication: string | null;
-  votes: number;
+  votes: number; // people's votes plus 3 per boost
+  boostedBy: string[];
   hasVoted: boolean;
   addedBy: { name: string };
 };
@@ -22,11 +24,13 @@ export function QueueRow({
   item,
   leadBy,
   vote,
+  boost,
   menu,
 }: {
   item: QueueRowItem;
   leadBy?: number | null;
   vote: React.ReactNode;
+  boost?: React.ReactNode;
   menu?: React.ReactNode;
 }) {
   const isLeader = leadBy !== undefined;
@@ -53,10 +57,12 @@ export function QueueRow({
         <span className="flex min-w-0 items-center gap-2 text-body-sm text-muted-foreground">
           <span className="truncate">Added by {item.addedBy.name}</span>
           {item.durationSeconds !== null && <span className="tabular-nums">{formatDuration(item.durationSeconds)}</span>}
+          <BoostChip names={item.boostedBy} />
         </span>
         <Dedication text={item.dedication} className="text-body-sm" />
       </div>
       <Badge variant="neutral" className="hidden rounded-md sm:inline-flex">YouTube</Badge>
+      {boost}
       {menu}
     </li>
   );

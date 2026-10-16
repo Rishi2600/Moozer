@@ -1,7 +1,8 @@
 import { ArrowDownWideNarrow, ListMusic } from "lucide-react";
 
-// "Up next" card; rows are rendered by the caller.
-export function QueueCard({ count, children }: { count: number; children: React.ReactNode }) {
+// "Up next" card; rows are rendered by the caller. `status` (the viewer's
+// boost) takes the place of "Sorted by votes" on phones.
+export function QueueCard({ count, status, children }: { count: number; status?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="flex flex-col rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between border-b border-border/60 pb-3.5">
@@ -11,9 +12,12 @@ export function QueueCard({ count, children }: { count: number; children: React.
             {count} {count === 1 ? "song" : "songs"}
           </span>
         </h2>
-        <span className="flex items-center gap-1 text-body-sm text-muted-foreground">
-          <ArrowDownWideNarrow className="size-4 text-primary" aria-hidden />
-          Sorted by votes
+        <span className="flex items-center gap-4">
+          <span className={status ? "flex items-center gap-1 text-body-sm text-muted-foreground max-sm:hidden" : "flex items-center gap-1 text-body-sm text-muted-foreground"}>
+            <ArrowDownWideNarrow className="size-4 text-primary" aria-hidden />
+            Sorted by votes
+          </span>
+          {status}
         </span>
       </div>
       {count === 0 ? (

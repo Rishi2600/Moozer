@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Logo } from "@/components/logo";
+import { BoostChip } from "@/components/queue/boost";
 import { Dedication } from "@/components/queue/dedication";
 import { ReactionLayer } from "@/components/queue/reactions";
 import { SongThumb } from "@/components/queue/song-thumb";
@@ -98,7 +99,10 @@ export default async function TvDisplayPage({ params }: PageProps<"/s/[slug]/dis
                         </span>
                       )}
                       <span className="truncate text-title-sm text-foreground xl:text-headline-md">{item.title}</span>
-                      <span className="truncate text-body-md text-muted-foreground">Added by {item.addedBy.name}</span>
+                      <span className="flex min-w-0 items-center gap-2 text-body-md text-muted-foreground">
+                        <span className="truncate">Added by {item.addedBy.name}</span>
+                        <BoostChip names={item.boostedBy} className="text-label-md" />
+                      </span>
                       <Dedication text={item.dedication} className="text-body-md" />
                     </div>
                   </li>

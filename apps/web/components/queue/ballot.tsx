@@ -2,13 +2,15 @@
 
 import { useCallback, useOptimistic, useRef, useState, useTransition } from "react";
 
-import { playNextAction, removeSongAction, voteAction } from "@/app/(app)/s/[slug]/actions";
+import { boostAction, playNextAction, removeSongAction, undoBoostAction, voteAction } from "@/app/(app)/s/[slug]/actions";
 import { useLive } from "@/components/space/live";
 import { RemovePersonDialog, type Person } from "@/components/space/remove-person-dialog";
 import { Toast } from "@/components/ui/toast";
+import { BOOST_VOTES } from "@/lib/queue/boost";
 import { leadMargin, sortQueue } from "@/lib/queue/order";
 import { useFlip } from "@/lib/use-flip";
 
+import { BoostButton, BoostStatus, useBoostReady } from "./boost";
 import { QueueCard } from "./queue-card";
 import { QueueRow, type QueueRowItem } from "./queue-row";
 import { RowMenu } from "./row-menu";
@@ -17,33 +19,64 @@ import { VoteButton } from "./vote-button";
 type BallotItem = QueueRowItem & { addedAt: Date; addedById: string; addedBy: { name: string } };
 type Message = { text: string; undo?: () => void };
 
-// The live ballot: votes apply instantly (re-sorted with the same rules as
-// the server), then the server action saves them and the page refreshes.
-type Viewer = { userId: string; isHost: boolean; spaceId: string; live: boolean };
+// The live ballot: votes and boosts apply instantly (re-sorted with the same
+// rules as the server), then the server action saves them and the page refreshes.
+type Viewer = { userId: string; name: string; isHost: boolean; spaceId: string; live: boolean; boostReadyAt: Date | null };
+type Change = { kind: "vote"; id: string; voted: boolean } | { kind: "boost"; id: string; name: string };
 
 export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVote: boolean; viewer: Viewer }) {
   const [, startTransition] = useTransition();
   const offline = useLive().status === "offline";
   const [message, setMessage] = useState<Message | null>(null);
   const [removing, setRemoving] = useState<Person | null>(null);
-  const [optimistic, applyVote] = useOptimistic(items, (current, change: { id: string; voted: boolean }) =>
+  const [optimistic, apply] = useOptimistic(items, (current, change: Change) =>
     sortQueue(
-      current.map((item) =>
-        item.id === change.id && item.hasVoted !== change.voted
-          ? { ...item, hasVoted: change.voted, votes: item.votes + (change.voted ? 1 : -1) }
-          : item
-      )
+      current.map((item) => {
+        if (item.id !== change.id) return item;
+        if (change.kind === "boost") return { ...item, votes: item.votes + BOOST_VOTES, boostedBy: [...item.boostedBy, change.name] };
+        return item.hasVoted !== change.voted ? { ...item, hasVoted: change.voted, votes: item.votes + (change.voted ? 1 : -1) } : item;
+      })
     )
   );
+  // Spent here until the refresh brings the new readyAt.
+  const [spent, setSpent] = useState(false);
+  const boostReady = useBoostReady(viewer.boostReadyAt) && !spent;
+  const readyAtMs = viewer.boostReadyAt?.getTime() ?? null;
+  const [lastReadyAtMs, setLastReadyAtMs] = useState(readyAtMs);
+  if (lastReadyAtMs !== readyAtMs) {
+    setLastReadyAtMs(readyAtMs);
+    setSpent(false);
+  }
   const dismiss = useCallback(() => setMessage(null), []);
 
   function vote(id: string, voted: boolean, withUndo = true) {
     startTransition(async () => {
-      applyVote({ id, voted });
+      apply({ kind: "vote", id, voted });
       const result = await voteAction(id, voted);
       if (!result.ok) setMessage({ text: result.error });
       else if (withUndo) setMessage({ text: voted ? "Vote added" : "Vote removed", undo: () => vote(id, !voted, false) });
       else setMessage(null);
+    });
+  }
+
+  function boost(id: string) {
+    setSpent(true);
+    startTransition(async () => {
+      apply({ kind: "boost", id, name: viewer.name });
+      const result = await boostAction(id);
+      if (!result.ok) {
+        setSpent(false);
+        setMessage({ text: result.error });
+        return;
+      }
+      setMessage({
+        text: `Boosted: +${BOOST_VOTES} votes`,
+        undo: () =>
+          startTransition(async () => {
+            const undone = await undoBoostAction(result.boostId);
+            setMessage({ text: undone.ok ? "Boost undone. It's yours to use again." : undone.error });
+          }),
+      });
     });
   }
 
@@ -59,7 +92,7 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
   useFlip(list, optimistic.map((item) => item.id).join(","));
   return (
     <div ref={list} className="contents">
-      <QueueCard count={optimistic.length}>
+      <QueueCard count={optimistic.length} status={canVote ? <BoostStatus ready={boostReady} readyAt={viewer.boostReadyAt} /> : undefined}>
         {optimistic.map((item, index) => (
           <QueueRow
             key={item.id}
@@ -73,6 +106,9 @@ export function Ballot({ items, canVote, viewer }: { items: BallotItem[]; canVot
                 className="max-sm:size-11"
                 onClick={() => vote(item.id, !item.hasVoted)}
               />
+            }
+            boost={
+              canVote && boostReady ? <BoostButton title={item.title} disabled={offline} onClick={() => boost(item.id)} /> : undefined
             }
             menu={
               canVote && (viewer.isHost || item.addedById === viewer.userId) ? (
