@@ -28,6 +28,7 @@ model User {
   votes         Vote[]
   boosts        Boost[]
   boostLedger   BoostLedger[]
+  orders        PaymentOrder[]
 
   @@map("user")
 }
@@ -272,6 +273,8 @@ model BoostLedger {
   reason    LedgerReason
   usedFree  Boolean      @default(false)
   cause     RefundCause?
+  orderId   String? // the purchase or coupon order a credit came from
+  order     PaymentOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
   // Where it happened, kept after the boost or song is gone.
   boostId   String?
   spaceId   String?
@@ -282,4 +285,65 @@ model BoostLedger {
   @@index([userId, seq])
   @@index([spaceId])
   @@map("boost_ledger")
+}
+
+enum PaymentProvider {
+  razorpay
+  coupon // a 100% code: no payment at all
+}
+
+enum OrderStatus {
+  created
+  paid
+  failed
+  refunded
+}
+
+enum CouponScope {
+  all
+  packs // not the single boost
+}
+
+// A discount code. Created and switched off with the coupon script; never
+// deleted, so orders keep pointing at it.
+model Coupon {
+  id             String         @id @default(cuid())
+  code           String         @unique // upper case
+  percentOff     Int
+  appliesTo      CouponScope    @default(all)
+  active         Boolean        @default(true)
+  maxRedemptions Int? // across everyone
+  perUserLimit   Int?
+  expiresAt      DateTime?
+  note           String?
+  createdAt      DateTime       @default(now())
+  orders         PaymentOrder[]
+
+  @@map("coupon")
+}
+
+// One attempt to get boosts: a Razorpay payment, or a code that made it free.
+// The pack, count and amount are fixed when it's created. Kept when the
+// account is deleted (userId cleared) as a record of the sale.
+model PaymentOrder {
+  id                String          @id @default(cuid())
+  userId            String?
+  user              User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  provider          PaymentProvider
+  providerOrderId   String?         @unique
+  providerPaymentId String?         @unique
+  pack              String
+  boosts            Int
+  amountPaise       Int
+  currency          String          @default("INR")
+  couponId          String?
+  coupon            Coupon?         @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  status            OrderStatus     @default(created)
+  createdAt         DateTime        @default(now())
+  paidAt            DateTime?
+  ledger            BoostLedger[]
+
+  @@index([userId, createdAt])
+  @@index([couponId, userId])
+  @@map("payment_order")
 }
