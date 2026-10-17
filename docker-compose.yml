@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: moozer
       POSTGRES_DB: moozer
     ports:
-      - "5432:5432"
+      # 5433 on this machine, so Moozer can run beside other projects using 5432.
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

@@ -19,7 +19,7 @@ Needs Node 20.19+ and Docker.
 
 ```bash
 cp .env.example .env                       # one env file for every app
-docker compose up -d                       # Postgres 17 on localhost:5432
+docker compose up -d                       # Postgres 17 on localhost:5433
 npm install
 npm run migrate --workspace=@moozer/db     # apply migrations, generate the client
 npm run dev                                # web on http://localhost:3000 + realtime on :8080
