@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, User } from "lucide-react";
+import { ChevronsUpDown, Compass, Heart, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -45,6 +45,23 @@ export function UserMenu({ name, email, compact = false }: { name: string; email
         {!compact && <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align={compact ? "end" : "start"} side={compact ? "bottom" : "top"}>
+        {compact && (
+          // Phones have no sidebar: the pages it links to live here.
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/discover">
+                <Compass aria-hidden />
+                Discover
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/liked">
+                <Heart aria-hidden />
+                Liked songs
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/account">
             <User aria-hidden />

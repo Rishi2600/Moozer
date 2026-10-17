@@ -1,4 +1,4 @@
-import { Compass, LayoutGrid, UserRound } from "lucide-react";
+import { Compass, Heart, LayoutGrid, UserRound } from "lucide-react";
 import Link from "next/link";
 
 import { Logo } from "@/components/logo";
@@ -23,6 +23,9 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
             </NavLink>
             <NavLink href="/discover" icon={<Compass aria-hidden />}>
               Discover
+            </NavLink>
+            <NavLink href="/liked" icon={<Heart aria-hidden />}>
+              Liked
             </NavLink>
             <NavLink href="/account" icon={<UserRound aria-hidden />}>
               Account
