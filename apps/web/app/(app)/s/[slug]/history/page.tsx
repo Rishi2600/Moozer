@@ -6,7 +6,8 @@ import { Avatar } from "@/components/avatar";
 import { LocalTime } from "@/components/local-time";
 import { Dedication } from "@/components/queue/dedication";
 import { SongThumb } from "@/components/queue/song-thumb";
-import { HISTORY_PAGE_SIZE, getHistory } from "@/lib/queue/data";
+import { TakeHome } from "@/components/queue/take-home";
+import { HISTORY_PAGE_SIZE, getHistory, getPlayedSongs } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
 import { formatDuration } from "@/lib/songs/links";
 import { inSpace, openSpace } from "@/lib/spaces/data";
@@ -23,7 +24,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
   const opened = await openSpace(slug, user.id);
   if (!inSpace(opened)) return null; // the layout explains
   const page = Math.max(1, Number.parseInt(String(rawPage ?? "1"), 10) || 1);
-  const history = await getHistory(opened.space.id, user.id, page);
+  const [history, played] = await Promise.all([getHistory(opened.space.id, user.id, page), getPlayedSongs(opened.space.id)]);
   if (!history) return null;
   const canRequeue = opened.space.status !== "ended";
   const first = (page - 1) * HISTORY_PAGE_SIZE + 1;
@@ -36,6 +37,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
           {history.total} {history.total === 1 ? "song" : "songs"}
         </span>
       </h2>
+      <TakeHome songs={played} />
       {history.total === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-card p-10 text-center shadow-sm">
           <span className="flex size-10 items-center justify-center rounded-full bg-cream-container text-primary">

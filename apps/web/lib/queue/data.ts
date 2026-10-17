@@ -290,6 +290,16 @@ export async function getHistory(spaceId: string, userId: string, page: number) 
   return { items, total, pages: Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE)) };
 }
 
+// Everything that played, in the order it played (for the playlist link).
+export async function getPlayedSongs(spaceId: string) {
+  const items = await prisma.queueItem.findMany({
+    where: { spaceId, status: "played", source: "youtube" },
+    orderBy: { startedAt: "asc" },
+    select: { sourceId: true, title: true },
+  });
+  return items.map((item) => ({ videoId: item.sourceId, title: item.title }));
+}
+
 // "Add to queue again" from History: same song, the normal add rules.
 export async function requeue(itemId: string, userId: string) {
   const played = await prisma.queueItem.findFirst({
