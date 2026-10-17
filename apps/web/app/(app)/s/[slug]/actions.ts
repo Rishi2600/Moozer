@@ -3,12 +3,15 @@
 import { refresh } from "next/cache";
 
 import { spendBoost, undoBoost } from "@/lib/boosts/wallet";
-import { addSong, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote } from "@/lib/queue/data";
+import { addSong, findActiveCopies, findActiveCopy, playNext, removeSong, requeue, seek, setPaused, setVote } from "@/lib/queue/data";
 import { issueRealtimeTicket } from "@/lib/realtime";
 import { getSession } from "@/lib/session";
+import { failureLimiter } from "@/lib/rate-limit";
 import { cleanDedication } from "@/lib/songs/dedication";
 import { parseSongLink } from "@/lib/songs/links";
 import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
+import { searchYouTube } from "@/lib/songs/search";
+import { SEARCH_PER_PERSON } from "@/lib/songs/search-rules";
 import { openSpaceNow, removeFromSpace, setSpaceOnBreak } from "@/lib/spaces/data";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof findActiveCopy>>>;
@@ -38,6 +41,32 @@ export async function previewSongAction(spaceId: string, link: string): Promise<
   const found = await lookupYouTube(parsed.videoId);
   return found.ok ? { state: "ready", song: found.song } : { state: "error", message: LOOKUP_ERRORS[found.reason] };
 }
+
+// Every search counts toward a person's allowance (see search-rules.ts).
+const searchLimit = failureLimiter(SEARCH_PER_PERSON);
+
+const SEARCH_ERRORS = {
+  "too-short": "Type at least 2 characters to search.",
+  resting: "Search is resting until tomorrow (it's limited for now). Paste a YouTube link instead.",
+  unavailable: "Couldn't reach YouTube just now. Try again, or paste a link.",
+  "no-key": "Search isn't set up yet. Paste a YouTube link instead.",
+} as const;
+
+// Words typed into Add a song: music videos from YouTube, each marked if it's
+// already in this space's queue.
+export async function searchSongsAction(spaceId: string, query: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again to add songs." };
+  const key = `search:${session.user.id}`;
+  if (searchLimit.blocked(key)) return { ok: false as const, error: "That's a lot of searching. Wait a few minutes, or paste a link." };
+  searchLimit.fail(key);
+  const found = await searchYouTube(query);
+  if (!found.ok) return { ok: false as const, error: SEARCH_ERRORS[found.reason] };
+  const copies = await findActiveCopies(spaceId, found.songs.map((song) => song.videoId), session.user.id);
+  return { ok: true as const, results: found.songs.map((song) => ({ song, existing: copies.get(song.videoId) ?? null })) };
+}
+
+export type SearchResults = Extract<Awaited<ReturnType<typeof searchSongsAction>>, { ok: true }>["results"];
 
 export async function addSongAction(spaceId: string, videoId: string, dedication?: string) {
   const session = await getSession();

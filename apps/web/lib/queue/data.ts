@@ -93,6 +93,36 @@ export async function findActiveCopy(spaceId: string, videoId: string, userId?: 
   );
 }
 
+// Which of these videos are already queued (or playing) here, for search results.
+export async function findActiveCopies(spaceId: string, videoIds: string[], userId: string) {
+  if (videoIds.length === 0) return new Map<string, NonNullable<Awaited<ReturnType<typeof findActiveCopy>>>>();
+  const items = await prisma.queueItem.findMany({
+    where: { spaceId, source: "youtube", sourceId: { in: videoIds }, status: { in: ["queued", "playing"] } },
+    select: {
+      id: true,
+      sourceId: true,
+      title: true,
+      thumbnailUrl: true,
+      status: true,
+      _count: { select: { votes: true, boosts: true } },
+      votes: { where: { userId }, select: { userId: true } },
+    },
+  });
+  return new Map(
+    items.map((item) => [
+      item.sourceId,
+      {
+        id: item.id,
+        title: item.title,
+        thumbnailUrl: item.thumbnailUrl,
+        playing: item.status === "playing",
+        votes: ballotVotes(item._count.votes, item._count.boosts),
+        hasVoted: item.votes.length > 0,
+      },
+    ])
+  );
+}
+
 // Adds the song with the adder's vote, unless that video is already in.
 export async function addSong(spaceId: string, userId: string, details: SongDetails, dedication: string | null = null) {
   const who = await access(spaceId, userId);
