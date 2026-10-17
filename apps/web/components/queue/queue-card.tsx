@@ -27,7 +27,7 @@ export function QueueCard({ count, status, children }: { count: number; status?:
           </span>
           <p className="text-title-sm text-foreground">No songs yet</p>
           <p className="max-w-sm text-body-md text-muted-foreground">
-            Paste a YouTube link to add the first one. The song with the most votes plays next.
+            Paste a YouTube link or search for a song to add the first one. The song with the most votes plays next.
           </p>
         </div>
       ) : (

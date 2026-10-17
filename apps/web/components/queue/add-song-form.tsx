@@ -1,26 +1,30 @@
 "use client";
 
-import { CircleCheck, Heart, Info, Link2, ListPlus, ThumbsUp, X, Zap } from "lucide-react";
+import { ChevronLeft, CircleCheck, Heart, Info, Link2, ListPlus, Search, ThumbsUp, X, Zap } from "lucide-react";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
-import { addSongAction, previewSongAction, voteAction, type Preview } from "@/app/(app)/s/[slug]/actions";
+import { addSongAction, previewSongAction, searchSongsAction, voteAction, type Preview, type SearchResults } from "@/app/(app)/s/[slug]/actions";
 import { FormError } from "@/components/auth/form-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEDICATION_MAX } from "@/lib/songs/dedication";
-import { formatDuration } from "@/lib/songs/links";
+import { formatDuration, looksLikeLink } from "@/lib/songs/links";
 
 import { SongThumb } from "./song-thumb";
 
-// Paste a link -> preview resolves on its own -> Add to queue (or vote for
-// the copy already queued). onDone fires with the confirmation to show.
+// One box for both: paste a link and its preview resolves on its own, or type
+// words and press Enter to search YouTube, then pick a result. Either way the
+// song gets Add to queue (or a vote for the copy already queued). onDone
+// fires with the confirmation to show.
 export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; onDone: (message: string) => void; autoFocus?: boolean }) {
   const [link, setLink] = useState("");
   const [dedication, setDedication] = useState("");
   const dedicationId = useId();
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [results, setResults] = useState<{ query: string; items: SearchResults } | null>(null);
+  const [picked, setPicked] = useState<SearchResults[number] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, startCheck] = useTransition();
   const [saving, startSave] = useTransition();
@@ -28,7 +32,7 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
 
   useEffect(() => {
     const request = ++latest.current;
-    if (!link.trim()) return;
+    if (!looksLikeLink(link)) return; // words wait for Enter: searching costs quota
     const timer = setTimeout(() => {
       startCheck(async () => {
         const result = await previewSongAction(spaceId, link);
@@ -41,7 +45,21 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
   function change(value: string) {
     setLink(value);
     setError(null);
+    setResults(null);
+    setPicked(null);
     if (!value.trim()) setPreview(null);
+  }
+
+  function search() {
+    const query = link.trim();
+    if (!query || looksLikeLink(query)) return;
+    setError(null);
+    setPicked(null);
+    startCheck(async () => {
+      const found = await searchSongsAction(spaceId, query);
+      if (found.ok) setResults({ query, items: found.results });
+      else setError(found.error);
+    });
   }
 
   function finish(message: string) {
@@ -66,31 +84,63 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
     });
   }
 
-  const shown = link.trim() ? preview : null;
+  const isLink = looksLikeLink(link);
+  const fromSearch: Preview | null = picked && (picked.existing ? { state: "duplicate", existing: picked.existing } : { state: "ready", song: picked.song });
+  const shown = !link.trim() ? null : isLink ? preview : fromSearch;
   const dedicationLength = [...dedication.trim()].length; // an emoji counts once, as on the server
   const dedicationTooLong = dedicationLength > DEDICATION_MAX;
   return (
     <div className="flex flex-col gap-space-md">
-      <div className="relative">
-        <Link2 className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary" aria-hidden />
-        <Input
-          value={link}
-          onChange={(event) => change(event.target.value)}
-          placeholder="Paste a YouTube link"
-          aria-label="Song link"
-          autoComplete="off"
-          autoFocus={autoFocus}
-          className="px-10"
-          aria-invalid={shown?.state === "error" ? true : undefined}
-        />
-        {link && (
-          <button type="button" onClick={() => change("")} aria-label="Clear link" className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-            <X className="size-4" aria-hidden />
-          </button>
+      <form
+        role="search"
+        className="flex gap-space-sm"
+        onSubmit={(event) => {
+          event.preventDefault();
+          search();
+        }}
+      >
+        <div className="relative min-w-0 flex-1">
+          {isLink || !link.trim() ? (
+            <Link2 className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary" aria-hidden />
+          ) : (
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-primary" aria-hidden />
+          )}
+          <Input
+            value={link}
+            onChange={(event) => change(event.target.value)}
+            placeholder="Paste a YouTube link or search"
+            aria-label="Song link or search"
+            autoComplete="off"
+            enterKeyHint="search"
+            autoFocus={autoFocus}
+            className="px-10"
+            aria-invalid={shown?.state === "error" ? true : undefined}
+          />
+          {link && (
+            <button type="button" onClick={() => change("")} aria-label="Clear" className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="size-4" aria-hidden />
+            </button>
+          )}
+        </div>
+        {link.trim() && !isLink && (
+          <Button type="submit" variant="outline" disabled={checking} className="h-11">
+            {checking ? "Searching…" : "Search"}
+          </Button>
         )}
-      </div>
+      </form>
 
-      {checking && !shown && <p className="text-body-sm text-muted-foreground">Looking up the song…</p>}
+      {checking && isLink && !shown && <p className="text-body-sm text-muted-foreground">Looking up the song…</p>}
+      {link.trim() && !isLink && !results && !checking && !error && (
+        <p className="text-body-sm text-muted-foreground">Press Enter to search YouTube for music.</p>
+      )}
+
+      {results && !picked && <SearchList results={results} onPick={setPicked} />}
+      {picked && (
+        <button type="button" onClick={() => setPicked(null)} className="flex w-fit items-center gap-1 text-label-md text-primary underline-offset-4 hover:underline">
+          <ChevronLeft className="size-4" aria-hidden />
+          Back to results
+        </button>
+      )}
       {shown?.state === "error" && <FormError>{shown.message}</FormError>}
 
       {shown?.state === "ready" && (
@@ -166,6 +216,49 @@ function SongPreview({ thumbnail, title, children }: { thumbnail: string; title:
           {children}
         </span>
       </div>
+    </div>
+  );
+}
+
+// Search results: pick one to see it ready to add (or vote for, if it's queued).
+function SearchList({ results, onPick }: { results: { query: string; items: SearchResults }; onPick: (item: SearchResults[number]) => void }) {
+  if (results.items.length === 0) {
+    return (
+      <p className="text-body-sm text-muted-foreground">
+        No music videos found for &ldquo;{results.query}&rdquo;. Try other words, or paste the song&apos;s link.
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-1" aria-label={`Results for ${results.query}`}>
+        {results.items.map((item) => (
+          <li key={item.song.videoId}>
+            <button
+              type="button"
+              onClick={() => onPick(item)}
+              className="flex w-full items-center gap-3 rounded-xl p-2 text-left outline-none hover:bg-cream-subtle focus-visible:ring-3 focus-visible:ring-primary/30"
+            >
+              <SongThumb src={item.song.thumbnailUrl} className="w-20 shrink-0" sizes="80px" />
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="line-clamp-2 text-label-md text-foreground">{item.song.title}</span>
+                <span className="truncate text-body-sm text-muted-foreground">
+                  {[item.song.channel, item.song.durationSeconds !== null ? formatDuration(item.song.durationSeconds) : null].filter(Boolean).join(" · ")}
+                </span>
+                {item.existing && (
+                  <span className="text-body-sm text-orange-deep">
+                    {item.existing.playing ? "Playing now" : `In the queue · ${item.existing.votes} ${item.existing.votes === 1 ? "vote" : "votes"}`}
+                  </span>
+                )}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="text-body-sm text-faint-foreground">
+        Search shows videos their uploader filed under Music, so you get songs, not reaction videos or tutorials. If a song doesn&apos;t
+        show up, paste its link.
+      </p>
     </div>
   );
 }

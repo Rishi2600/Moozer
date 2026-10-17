@@ -39,7 +39,7 @@ export function AddSongSheet({ spaceId }: { spaceId: string }) {
           <span aria-hidden className="mx-auto -mt-2 h-1 w-9 rounded-full bg-border-strong" />
           <DialogHeader>
             <DialogTitle>Add a song</DialogTitle>
-            <DialogDescription>Paste a link from YouTube.</DialogDescription>
+            <DialogDescription>Paste a YouTube link, or search for a song.</DialogDescription>
           </DialogHeader>
           <AddSongForm spaceId={spaceId} onDone={done} autoFocus />
         </DialogContent>
