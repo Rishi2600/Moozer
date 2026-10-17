@@ -9,17 +9,18 @@ import { HostShortcuts } from "@/components/queue/host-shortcuts";
 import { PlayNextButton } from "@/components/queue/play-next-button";
 import { ReactionBar, ReactionLayer } from "@/components/queue/reactions";
 import { SongNudge } from "@/components/queue/song-nudge";
-import { EndedCard } from "@/components/space/ended-card";
+import { RecapCard } from "@/components/space/recap-card";
 import { InviteCard } from "@/components/space/invite-card";
 import { InTheRoomCard } from "@/components/space/presence";
 import { LikeButton } from "@/components/queue/like-button";
 import { getWallet } from "@/lib/boosts/wallet";
 import { likedVideoIds, listLiked } from "@/lib/songs/liked";
-import { getQueue, getSpaceStats } from "@/lib/queue/data";
+import { getQueue } from "@/lib/queue/data";
 import { getOrigin } from "@/lib/origin";
 import { requireSession } from "@/lib/session";
 import { formatJoinCode } from "@/lib/spaces/codes";
 import { inSpace, openSpace } from "@/lib/spaces/data";
+import { getRecap } from "@/lib/spaces/recap";
 
 export async function generateMetadata({ params }: PageProps<"/s/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -36,7 +37,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
   const { space, role } = opened;
   const isHost = role === "host";
   if (space.status === "ended") {
-    return <EndedCard space={space} isHost={isHost} stats={await getSpaceStats(space.id)} />;
+    return <RecapCard recap={await getRecap(space.id, user.id)} isHost={isHost} />;
   }
   const [{ nowPlaying, queue }, wallet, recentLikes] = await Promise.all([getQueue(space.id, user.id), getWallet(user.id), listLiked(user.id, 6)]);
   const liked = await likedVideoIds(user.id, nowPlaying ? [nowPlaying.sourceId] : []);
