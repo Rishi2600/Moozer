@@ -26,6 +26,7 @@ export function NowPlayingCard({
   media,
   overlay,
   reactions,
+  like,
   emptyHint,
 }: {
   playing: Playing;
@@ -33,6 +34,7 @@ export function NowPlayingCard({
   media?: React.ReactNode;
   overlay?: React.ReactNode;
   reactions?: React.ReactNode;
+  like?: React.ReactNode; // the heart, beside the title
   emptyHint: string;
 }) {
   return (
@@ -50,6 +52,7 @@ export function NowPlayingCard({
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate text-title-sm text-foreground">{playing.title}</span>
+                {like}
                 <Badge variant="neutral" className="rounded-md">YouTube</Badge>
               </span>
               <span className="text-body-sm text-muted-foreground">

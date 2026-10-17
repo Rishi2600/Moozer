@@ -6,9 +6,11 @@ import { Avatar } from "@/components/avatar";
 import { LocalTime } from "@/components/local-time";
 import { Dedication } from "@/components/queue/dedication";
 import { SongThumb } from "@/components/queue/song-thumb";
+import { LikeButton } from "@/components/queue/like-button";
 import { TakeHome } from "@/components/queue/take-home";
 import { HISTORY_PAGE_SIZE, getHistory, getPlayedSongs } from "@/lib/queue/data";
 import { requireSession } from "@/lib/session";
+import { likedVideoIds } from "@/lib/songs/liked";
 import { formatDuration } from "@/lib/songs/links";
 import { inSpace, openSpace } from "@/lib/spaces/data";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
   const page = Math.max(1, Number.parseInt(String(rawPage ?? "1"), 10) || 1);
   const [history, played] = await Promise.all([getHistory(opened.space.id, user.id, page), getPlayedSongs(opened.space.id)]);
   if (!history) return null;
+  const liked = await likedVideoIds(user.id, history.items.map((item) => item.sourceId));
   const canRequeue = opened.space.status !== "ended";
   const first = (page - 1) * HISTORY_PAGE_SIZE + 1;
 
@@ -55,7 +58,7 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
                 <th scope="col" className="hidden px-3 py-3 font-semibold md:table-cell">Added by</th>
                 <th scope="col" className="px-3 py-3 text-right font-semibold">Votes</th>
                 <th scope="col" className="hidden px-3 py-3 text-right font-semibold sm:table-cell">Played at</th>
-                <th scope="col" className="w-12 px-3 py-3"><span className="sr-only">Actions</span></th>
+                <th scope="col" className="w-24 px-3 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -85,7 +88,12 @@ export default async function HistoryPage({ params, searchParams }: PageProps<"/
                   <td className="hidden px-3 py-3 text-right text-body-md text-foreground sm:table-cell">
                     {item.startedAt && <LocalTime date={item.startedAt} />}
                   </td>
-                  <td className="px-3 py-3">{canRequeue && <RequeueButton itemId={item.id} title={item.title} />}</td>
+                  <td className="px-3 py-3">
+                    <span className="flex items-center justify-end gap-1">
+                      <LikeButton itemId={item.id} title={item.title} liked={liked.has(item.sourceId)} />
+                      {canRequeue && <RequeueButton itemId={item.id} title={item.title} />}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

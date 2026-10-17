@@ -29,6 +29,7 @@ model User {
   boosts        Boost[]
   boostLedger   BoostLedger[]
   orders        PaymentOrder[]
+  likedSongs    LikedSong[]
 
   @@map("user")
 }
@@ -346,4 +347,23 @@ model PaymentOrder {
   @@index([userId, createdAt])
   @@index([couponId, userId])
   @@map("payment_order")
+}
+
+// A song someone saved with the heart, kept as it was (title, channel...) so
+// the list survives the space and the queue item. Private to its owner.
+model LikedSong {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source          SongSource @default(youtube)
+  sourceId        String // YouTube video id
+  title           String
+  channel         String?
+  thumbnailUrl    String
+  durationSeconds Int?
+  likedAt         DateTime   @default(now())
+
+  @@unique([userId, source, sourceId])
+  @@index([userId, likedAt])
+  @@map("liked_song")
 }
