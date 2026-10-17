@@ -12,7 +12,9 @@ import { SongNudge } from "@/components/queue/song-nudge";
 import { EndedCard } from "@/components/space/ended-card";
 import { InviteCard } from "@/components/space/invite-card";
 import { InTheRoomCard } from "@/components/space/presence";
+import { LikeButton } from "@/components/queue/like-button";
 import { getWallet } from "@/lib/boosts/wallet";
+import { likedVideoIds, listLiked } from "@/lib/songs/liked";
 import { getQueue, getSpaceStats } from "@/lib/queue/data";
 import { getOrigin } from "@/lib/origin";
 import { requireSession } from "@/lib/session";
@@ -36,7 +38,8 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
   if (space.status === "ended") {
     return <EndedCard space={space} isHost={isHost} stats={await getSpaceStats(space.id)} />;
   }
-  const [{ nowPlaying, queue }, wallet] = await Promise.all([getQueue(space.id, user.id), getWallet(user.id)]);
+  const [{ nowPlaying, queue }, wallet, recentLikes] = await Promise.all([getQueue(space.id, user.id), getWallet(user.id), listLiked(user.id, 6)]);
+  const liked = await likedVideoIds(user.id, nowPlaying ? [nowPlaying.sourceId] : []);
   const live = space.status === "live"; // paused and scheduled spaces don't play
   const emptyHint =
     space.status === "scheduled"
@@ -57,6 +60,7 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
           media={isHost && nowPlaying ? <HostPlayer spaceId={space.id} playing={nowPlaying} /> : undefined}
           overlay={live ? <ReactionLayer /> : undefined}
           reactions={live ? <ReactionBar /> : undefined}
+          like={nowPlaying ? <LikeButton itemId={nowPlaying.id} title={nowPlaying.title} liked={liked.has(nowPlaying.sourceId)} className="-my-2" /> : undefined}
           controls={
             isHost && live ? (
               <div className="flex items-center gap-2">
@@ -83,9 +87,9 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
       <aside className="flex flex-col gap-gutter-desktop" aria-label="Space tools">
         <InviteCard link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
         <InTheRoomCard host={isHost ? { spaceId: space.id, userId: user.id } : undefined} />
-        <AddSongCard spaceId={space.id} />
+        <AddSongCard spaceId={space.id} liked={recentLikes} />
       </aside>
-      <AddSongSheet spaceId={space.id} />
+      <AddSongSheet spaceId={space.id} liked={recentLikes} />
       {!isHost && (
         <SongNudge
           viewerId={user.id}

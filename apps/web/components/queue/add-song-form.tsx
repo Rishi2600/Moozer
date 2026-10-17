@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, CircleCheck, Heart, Info, Link2, ListPlus, Search, ThumbsUp, X, Zap } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { addSongAction, previewSongAction, searchSongsAction, voteAction, type Preview, type SearchResults } from "@/app/(app)/s/[slug]/actions";
@@ -18,7 +19,19 @@ import { SongThumb } from "./song-thumb";
 // words and press Enter to search YouTube, then pick a result. Either way the
 // song gets Add to queue (or a vote for the copy already queued). onDone
 // fires with the confirmation to show.
-export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; onDone: (message: string) => void; autoFocus?: boolean }) {
+export type LikedPick = { videoId: string; title: string; channel: string | null; thumbnailUrl: string };
+
+export function AddSongForm({
+  spaceId,
+  onDone,
+  autoFocus,
+  liked = [],
+}: {
+  spaceId: string;
+  onDone: (message: string) => void;
+  autoFocus?: boolean;
+  liked?: LikedPick[];
+}) {
   const [link, setLink] = useState("");
   const [dedication, setDedication] = useState("");
   const dedicationId = useId();
@@ -135,6 +148,10 @@ export function AddSongForm({ spaceId, onDone, autoFocus }: { spaceId: string; o
       )}
 
       {results && !picked && <SearchList results={results} onPick={setPicked} />}
+      {!link.trim() && liked.length > 0 && (
+        // A liked song goes through the link flow, so duplicates are caught the same way.
+        <LikedList liked={liked} onPick={(videoId) => change(`https://www.youtube.com/watch?v=${videoId}`)} />
+      )}
       {picked && (
         <button type="button" onClick={() => setPicked(null)} className="flex w-fit items-center gap-1 text-label-md text-primary underline-offset-4 hover:underline">
           <ChevronLeft className="size-4" aria-hidden />
@@ -259,6 +276,35 @@ function SearchList({ results, onPick }: { results: { query: string; items: Sear
         Search shows videos their uploader filed under Music, so you get songs, not reaction videos or tutorials. If a song doesn&apos;t
         show up, paste its link.
       </p>
+    </div>
+  );
+}
+
+// With the box empty: your latest liked songs, one tap to bring one in.
+function LikedList({ liked, onPick }: { liked: LikedPick[]; onPick: (videoId: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="flex items-center justify-between text-label-md text-foreground">
+        From your liked songs
+        <Link href="/liked" className="text-label-sm text-primary underline-offset-4 hover:underline">See all</Link>
+      </p>
+      <ul className="flex flex-col gap-1" aria-label="Your liked songs">
+        {liked.map((song) => (
+          <li key={song.videoId}>
+            <button
+              type="button"
+              onClick={() => onPick(song.videoId)}
+              className="flex w-full items-center gap-3 rounded-xl p-1.5 text-left outline-none hover:bg-cream-subtle focus-visible:ring-3 focus-visible:ring-primary/30"
+            >
+              <SongThumb src={song.thumbnailUrl} className="w-14 shrink-0" sizes="56px" />
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate text-label-md text-foreground">{song.title}</span>
+                {song.channel && <span className="truncate text-body-sm text-muted-foreground">{song.channel}</span>}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

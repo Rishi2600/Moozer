@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Toast } from "@/components/ui/toast";
 
-import { AddSongForm } from "./add-song-form";
+import { AddSongForm, type LikedPick } from "./add-song-form";
 
 // Phones and tablets: a sticky "Add a song" bar that opens a bottom sheet.
-export function AddSongSheet({ spaceId }: { spaceId: string }) {
+export function AddSongSheet({ spaceId, liked }: { spaceId: string; liked: LikedPick[] }) {
   const [open, setOpen] = useState(false);
   const offline = useLive().status === "offline";
   const [message, setMessage] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export function AddSongSheet({ spaceId }: { spaceId: string }) {
             <DialogTitle>Add a song</DialogTitle>
             <DialogDescription>Paste a YouTube link, or search for a song.</DialogDescription>
           </DialogHeader>
-          <AddSongForm spaceId={spaceId} onDone={done} autoFocus />
+          <AddSongForm spaceId={spaceId} onDone={done} autoFocus liked={liked} />
         </DialogContent>
       </Dialog>
       {message && <Toast message={message} onDismiss={dismiss} />}
