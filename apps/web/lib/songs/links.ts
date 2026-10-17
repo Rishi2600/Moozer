@@ -33,6 +33,17 @@ export function parseSongLink(input: string): SongLink | null {
   return id && VIDEO_ID.test(id) ? { kind: "youtube", videoId: id } : { kind: "unsupported" };
 }
 
+const KNOWN_HOSTS = /^(www\.|m\.|music\.)?(youtube\.com|youtu\.be|open\.spotify\.com|spotify\.link)(\/|$)/i;
+
+// Whether "Add a song" should treat the text as a link (and preview it) or
+// as words to search for. A link has a scheme, a known host, or a domain
+// followed by a path; "Mr.Brightside" or "despacito remix" are searches.
+export function looksLikeLink(input: string) {
+  const value = input.trim();
+  if (!value || /\s/.test(value)) return false;
+  return /^[a-z]+:\/\//i.test(value) || /^spotify:/i.test(value) || KNOWN_HOSTS.test(value) || /^(www\.)?[\w-]+(\.[\w-]+)+\//i.test(value);
+}
+
 // YouTube's ISO 8601 durations: "PT3M39S" -> 219, "PT1H2M5S" -> 3725.
 export function parseIsoDuration(iso: string) {
   const match = iso.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDuration, parseIsoDuration, parseSongLink } from "./links";
+import { formatDuration, looksLikeLink, parseIsoDuration, parseSongLink } from "./links";
 
 const yt = (videoId: string) => ({ kind: "youtube", videoId });
 
@@ -48,5 +48,19 @@ describe("durations", () => {
     expect(formatDuration(219)).toBe("3:39");
     expect(formatDuration(5)).toBe("0:05");
     expect(formatDuration(3725)).toBe("1:02:05");
+  });
+});
+
+describe("telling links from searches", () => {
+  it("treats links as links", () => {
+    for (const link of ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "youtu.be/dQw4w9WgXcQ", "youtube.com/shorts/abc", "spotify:track:1", "open.spotify.com/track/1", "example.com/song"]) {
+      expect(looksLikeLink(link), link).toBe(true);
+    }
+  });
+
+  it("treats words as searches", () => {
+    for (const words of ["despacito", "despacito remix", "Mr.Brightside", "AC/DC thunderstruck", "  ", "lo-fi beats"]) {
+      expect(looksLikeLink(words), words).toBe(false);
+    }
   });
 });
