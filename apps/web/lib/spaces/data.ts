@@ -183,6 +183,7 @@ export async function removeFromSpace(spaceId: string, hostId: string, userId: s
     await tx.boost.deleteMany({ where: { userId, queueItem: { spaceId, status: "queued" } } });
     await tx.queueItem.deleteMany({ where: { spaceId, addedById: userId, status: "queued" } });
     await tx.spaceMember.deleteMany({ where: { spaceId, userId } });
+    await tx.spaceSpeaker.deleteMany({ where: { spaceId, userId } });
     // Last, so the notification it sends comes after everything above.
     await tx.spaceRemoval.upsert({ where: { spaceId_userId: { spaceId, userId } }, create: { spaceId, userId }, update: {} });
     return true;
@@ -201,6 +202,7 @@ export async function endSpace(spaceId: string, hostId: string) {
     await tx.queueItem.updateMany({ where: { spaceId, status: "playing" }, data: FINISHED });
     await setRefundCause(tx, "space_ended");
     await tx.boost.deleteMany({ where: { spaceId, settled: false } });
+    await tx.spaceSpeaker.deleteMany({ where: { spaceId } }); // approvals end with the space
     return true;
   });
 }

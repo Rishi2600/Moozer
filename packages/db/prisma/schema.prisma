@@ -24,6 +24,7 @@ model User {
   hostedSpaces  Space[]
   memberships   SpaceMember[]
   removedFrom   SpaceRemoval[]
+  speakerIn     SpaceSpeaker[]
   addedSongs    QueueItem[]
   votes         Vote[]
   boosts        Boost[]
@@ -120,6 +121,7 @@ model Space {
   host         User           @relation(fields: [hostId], references: [id], onDelete: Cascade)
   members      SpaceMember[]
   removed      SpaceRemoval[]
+  speakers     SpaceSpeaker[]
   queue        QueueItem[]
   boosts       Boost[]
   boostLedger  BoostLedger[]
@@ -159,6 +161,21 @@ model SpaceRemoval {
   @@id([spaceId, userId])
   @@index([userId])
   @@map("space_removal")
+}
+
+// Guests the host approved to play the music on their own device too. Approved
+// once per space: they can turn their speaker off and on until the host turns
+// them off (deletes the row), removes them, or the space ends.
+model SpaceSpeaker {
+  spaceId   String
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantedAt DateTime @default(now())
+
+  @@id([spaceId, userId])
+  @@index([userId])
+  @@map("space_speaker")
 }
 
 // ---------------------------------------------------------------------------

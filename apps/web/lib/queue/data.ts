@@ -192,15 +192,20 @@ export async function removeSong(itemId: string, userId: string) {
 // song that has really played shouldn't hand its boosts back.
 export const UNPLAYABLE_WINDOW_MS = 15_000;
 
-// Host only. Moves the playing song to History and starts the chosen song
-// (or the top of the queue). With nothing queued it just finishes the current one.
-// ended (auto-advance): only advance if that song is still the one playing,
-// so two host tabs reporting the same ending can't skip two songs.
-export async function playNext(spaceId: string, hostId: string, itemId?: string, ended?: { itemId: string; unplayable: boolean }) {
+// Moves the playing song to History and starts the chosen song (or the top of
+// the queue). With nothing queued it just finishes the current one.
+// Play next / Play now are host only. ended (auto-advance) can also come from
+// an approved guest speaker; it only advances if that song is still the one
+// playing, so several speakers reporting the same ending can't skip two songs.
+// Only the host's player can call a song unplayable: one guest's device failing
+// shouldn't skip it for the room or refund its boosts.
+export async function playNext(spaceId: string, userId: string, itemId?: string, ended?: { itemId: string; unplayable: boolean }) {
   return prisma.$transaction(async (tx) => {
-    const space = await tx.space.findFirst({ where: { id: spaceId, hostId, status: "live" }, select: { id: true } });
+    const who = ended ? { OR: [{ hostId: userId }, { speakers: { some: { userId } } }] } : { hostId: userId };
+    const space = await tx.space.findFirst({ where: { id: spaceId, status: "live", ...who }, select: { hostId: true } });
     if (!space) return false;
     if (ended) {
+      if (ended.unplayable && space.hostId !== userId) return false;
       const current = await tx.queueItem.findFirst({ where: { spaceId, status: "playing" }, select: { id: true, startedAt: true } });
       if (current?.id !== ended.itemId) return true; // already moved on
       if (ended.unplayable && current.startedAt && Date.now() - current.startedAt.getTime() < UNPLAYABLE_WINDOW_MS) {

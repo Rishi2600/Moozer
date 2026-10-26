@@ -175,8 +175,8 @@ export async function seekAction(spaceId: string, seconds: number) {
   return { ok: true as const };
 }
 
-// The host's player reports that a song finished (or YouTube couldn't play
-// it): start the next one.
+// A player reports that a song finished (or, the host's only, that YouTube
+// couldn't play it): start the next one. Approved guest speakers report too.
 export async function songEndedAction(spaceId: string, itemId: string, unplayable = false) {
   const session = await getSession();
   if (!session) return { ok: false as const };
