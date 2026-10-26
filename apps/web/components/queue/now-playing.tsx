@@ -18,8 +18,9 @@ type Playing = {
 } | null;
 
 // Large on the host's screen; the controls slot holds Play next and pause.
-// `media` replaces the thumbnail (the host's YouTube player); `overlay` sits
-// on top of it (floating reactions) and `reactions` below the progress bar.
+// `media` replaces the thumbnail (a YouTube player); `overlay` sits on top of
+// it (floating reactions), `reactions` below the progress bar, and `speaker`
+// (a guest's speaker controls) at the bottom.
 export function NowPlayingCard({
   playing,
   controls,
@@ -27,6 +28,7 @@ export function NowPlayingCard({
   overlay,
   reactions,
   like,
+  speaker,
   emptyHint,
 }: {
   playing: Playing;
@@ -35,6 +37,7 @@ export function NowPlayingCard({
   overlay?: React.ReactNode;
   reactions?: React.ReactNode;
   like?: React.ReactNode; // the heart, beside the title
+  speaker?: React.ReactNode;
   emptyHint: string;
 }) {
   return (
@@ -65,6 +68,7 @@ export function NowPlayingCard({
           </div>
           <ProgressBar anchorAt={playing.anchorAt} pausedAtMs={playing.pausedAtMs} durationSeconds={playing.durationSeconds} />
           {reactions}
+          {speaker}
         </>
       ) : (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -74,6 +78,7 @@ export function NowPlayingCard({
           <p className="text-title-sm text-foreground">Nothing playing yet</p>
           <p className="max-w-sm text-body-md text-muted-foreground">{emptyHint}</p>
           {controls}
+          {speaker}
         </div>
       )}
     </section>
