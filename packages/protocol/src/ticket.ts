@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // A short-lived pass the website hands the browser so the realtime server
 // knows who is connecting to which space without sharing cookies.
 // Format: base64url(json).base64url(hmac-sha256).
-export type Ticket = { userId: string; name: string; spaceId: string; exp: number };
+export type Ticket = { userId: string; name: string; spaceId: string; host?: boolean; exp: number };
 
 const sign = (body: string, secret: string) => createHmac("sha256", secret).update(body).digest("base64url");
 

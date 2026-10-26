@@ -3,11 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Rooms, type Member } from "./rooms";
 
-function member(userId: string, name = userId) {
+function member(userId: string, name = userId, host = false) {
   const inbox: ServerMessage[] = [];
-  const m: Member = { userId, name, send: (msg) => inbox.push(msg) };
+  const m: Member = { userId, name, host, send: (msg) => inbox.push(msg) };
   return { m, inbox };
 }
+
+const last = (inbox: ServerMessage[], type: ServerMessage["type"]) => inbox.filter((msg) => msg.type === type).at(-1);
 
 describe("Rooms", () => {
   it("counts people, not tabs", () => {
@@ -115,5 +117,101 @@ describe("Removing someone", () => {
     expect(closed).toEqual([4003, 4003]);
     expect(maya.inbox.at(-1)).toMatchObject({ here: 1 });
     expect(rooms.react("s1", leo1.m, "🔥")).toBe(false);
+  });
+
+  describe("speakers", () => {
+    function room() {
+      const rooms = new Rooms();
+      const host = member("maya", "Maya", true), sam = member("sam", "Sam"), leo = member("leo", "Leo");
+      for (const p of [host, sam, leo]) rooms.join("s1", p.m);
+      return { rooms, host, sam, leo };
+    }
+
+    it("shows a guest's request on the host's screens only", () => {
+      const { rooms, host, sam, leo } = room();
+      expect(rooms.requestSpeaker("s1", sam.m, 1000)).toBe("asked");
+      expect(last(host.inbox, "speaker-requests")).toEqual({ type: "speaker-requests", requests: [{ id: "sam", name: "Sam", expiresAt: 61_000 }] });
+      expect(last(leo.inbox, "speaker-requests")).toBeUndefined();
+      expect(rooms.requestSpeaker("s1", sam.m, 2000)).toBe("pending"); // one open request each
+    });
+
+    it("ignores requests from the host", () => {
+      const { rooms, host } = room();
+      expect(rooms.requestSpeaker("s1", host.m)).toBe("ignored");
+    });
+
+    it("tells every screen of the guest when the host allows", () => {
+      const { rooms, host, sam } = room();
+      const samPhone = member("sam", "Sam");
+      rooms.join("s1", samPhone.m);
+      rooms.requestSpeaker("s1", sam.m);
+      expect(rooms.answerSpeaker("s1", host.m, "sam", true)).toBe(true);
+      expect(last(sam.inbox, "speaker-answer")).toEqual({ type: "speaker-answer", answer: "allowed" });
+      expect(last(samPhone.inbox, "speaker-answer")).toEqual({ type: "speaker-answer", answer: "allowed" });
+      expect(last(host.inbox, "speaker-requests")).toMatchObject({ requests: [] });
+    });
+
+    it("makes a guest wait 2 minutes after Not now", () => {
+      const { rooms, host, sam } = room();
+      rooms.requestSpeaker("s1", sam.m, 0);
+      rooms.answerSpeaker("s1", host.m, "sam", false, 1000);
+      expect(last(sam.inbox, "speaker-answer")).toEqual({ type: "speaker-answer", answer: "declined", retryAt: 121_000 });
+      expect(rooms.requestSpeaker("s1", sam.m, 60_000)).toBe("wait");
+      expect(rooms.requestSpeaker("s1", sam.m, 121_000)).toBe("asked");
+    });
+
+    it("only lets the host answer", () => {
+      const { rooms, sam, leo } = room();
+      rooms.requestSpeaker("s1", sam.m);
+      expect(rooms.answerSpeaker("s1", leo.m, "sam", true)).toBe(false);
+      expect(last(sam.inbox, "speaker-answer")).toBeUndefined();
+    });
+
+    it("expires an unanswered request after a minute", () => {
+      vi.useFakeTimers();
+      const { rooms, host, sam } = room();
+      rooms.requestSpeaker("s1", sam.m);
+      vi.advanceTimersByTime(60_000);
+      expect(last(sam.inbox, "speaker-answer")).toEqual({ type: "speaker-answer", answer: "expired" });
+      expect(last(host.inbox, "speaker-requests")).toMatchObject({ requests: [] });
+      vi.useRealTimers();
+    });
+
+    it("drops a request when the guest closes every screen", () => {
+      const { rooms, host, sam } = room();
+      rooms.requestSpeaker("s1", sam.m);
+      rooms.leave("s1", sam.m);
+      expect(last(host.inbox, "speaker-requests")).toMatchObject({ requests: [] });
+    });
+
+    it("lists who's playing for the host and counts screens", () => {
+      const { rooms, host, sam } = room();
+      const tv = member("maya", "Maya", true);
+      rooms.join("s1", tv.m);
+      rooms.setSpeaker("s1", host.m, "laptop");
+      rooms.setSpeaker("s1", tv.m, "tv");
+      rooms.setSpeaker("s1", sam.m, "phone");
+      expect(last(host.inbox, "speakers")).toEqual({
+        type: "speakers",
+        speakers: [
+          { id: "maya", name: "Maya", device: "laptop", host: true },
+          { id: "sam", name: "Sam", device: "phone", host: false },
+          { id: "maya", name: "Maya", device: "tv", host: true },
+        ],
+      });
+      expect(rooms.speakerCount("s1")).toBe(3);
+      rooms.leave("s1", sam.m);
+      expect(rooms.speakerCount("s1")).toBe(2);
+      expect(last(host.inbox, "speakers")).toMatchObject({ speakers: [{ device: "laptop" }, { device: "tv" }] });
+    });
+
+    it("sends a host who opens a screen the current requests and speakers", () => {
+      const { rooms, sam } = room();
+      rooms.requestSpeaker("s1", sam.m, 0);
+      const late = member("maya", "Maya", true);
+      rooms.join("s1", late.m);
+      expect(last(late.inbox, "speaker-requests")).toMatchObject({ requests: [{ id: "sam" }] });
+      expect(last(late.inbox, "speakers")).toEqual({ type: "speakers", speakers: [] });
+    });
   });
 });

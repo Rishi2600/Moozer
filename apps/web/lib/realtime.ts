@@ -9,7 +9,7 @@ export async function issueRealtimeTicket(user: { id: string; name: string }, sp
   if (!secret) return null; // realtime not configured: pages still work, just not live
   const member = await prisma.spaceMember.findUnique({
     where: { spaceId_userId: { spaceId, userId: user.id } },
-    select: { userId: true },
+    select: { space: { select: { hostId: true } } },
   });
-  return member ? signTicket({ userId: user.id, name: user.name, spaceId }, secret) : null;
+  return member ? signTicket({ userId: user.id, name: user.name, spaceId, host: member.space.hostId === user.id }, secret) : null;
 }

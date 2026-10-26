@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 
-import { CLOSE, isReaction, type ClientMessage, type ServerMessage } from "@moozer/protocol/messages";
+import { Bucket } from "@moozer/protocol/limit";
+import { CLOSE, isDevice, isReaction, type ClientMessage, type ServerMessage } from "@moozer/protocol/messages";
 import { verifyTicket } from "@moozer/protocol/ticket";
 import pg from "pg";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -31,6 +32,10 @@ resetCounts().catch((err) => console.error("realtime: couldn't reset listener co
 
 const rooms = new Rooms(100, (spaceId, here) => counts.set(spaceId, here));
 
+// Guests only play with sound once the host has approved them (stored by the website).
+const isApprovedSpeaker = async (spaceId: string, userId: string) =>
+  (await pool.query(`SELECT 1 FROM space_speaker WHERE "spaceId" = $1 AND "userId" = $2`, [spaceId, userId])).rowCount === 1;
+
 // Plain HTTP for health checks; WebSocket connections upgrade on the same port.
 const server = createServer((req, res) => {
   if (req.url === "/health") {
@@ -41,7 +46,7 @@ const server = createServer((req, res) => {
   res.writeHead(404).end();
 });
 
-// Browsers only send tiny messages (a reaction), so anything big is refused.
+// Browsers only send tiny messages (a reaction, a clock ping), so anything big is refused.
 const wss = new WebSocketServer({ noServer: true, maxPayload: 1024 });
 const alive = new WeakSet<WebSocket>();
 
@@ -61,9 +66,12 @@ server.on("upgrade", (req, socket, head) => {
     const member: Member = {
       userId: ticket.userId,
       name: ticket.name,
+      host: ticket.host === true,
       send: (message: ServerMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(message)),
       close: (code, reason) => ws.close(code, reason),
     };
+    // Everything but reactions (which have their own limit): clock pings and speaker messages.
+    const control = new Bucket(10, 2);
     alive.add(ws);
     ws.on("pong", () => alive.add(ws));
     ws.on("error", (err) => console.error("realtime: socket error", err.message));
@@ -76,7 +84,29 @@ server.on("upgrade", (req, socket, head) => {
       } catch {
         return;
       }
-      if (message?.type === "react" && isReaction(message.emoji)) rooms.react(ticket.spaceId, member, message.emoji);
+      if (message?.type === "react") {
+        if (isReaction(message.emoji)) rooms.react(ticket.spaceId, member, message.emoji);
+        return;
+      }
+      if (!control.take()) return;
+      if (message?.type === "time" && Number.isFinite(message.t0)) {
+        member.send({ type: "time", t0: message.t0, server: Date.now() });
+      } else if (message?.type === "speaker-request") {
+        rooms.requestSpeaker(ticket.spaceId, member);
+      } else if (message?.type === "speaker-answer" && typeof message.userId === "string" && typeof message.allow === "boolean") {
+        rooms.answerSpeaker(ticket.spaceId, member, message.userId, message.allow);
+      } else if (message?.type === "speaker" && message.device === null) {
+        rooms.setSpeaker(ticket.spaceId, member, null);
+      } else if (message?.type === "speaker" && isDevice(message.device)) {
+        const device = message.device;
+        if (member.host) {
+          rooms.setSpeaker(ticket.spaceId, member, device);
+          return;
+        }
+        isApprovedSpeaker(ticket.spaceId, member.userId)
+          .then((ok) => ok && rooms.setSpeaker(ticket.spaceId, member, device))
+          .catch((err) => console.error("realtime: couldn't check a speaker", err.message));
+      }
     });
     rooms.join(ticket.spaceId, member);
   });
