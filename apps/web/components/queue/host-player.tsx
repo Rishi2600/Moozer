@@ -7,18 +7,23 @@ import { seekAction, setPausedAction, songEndedAction } from "@/app/(app)/s/[slu
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 
+import { useSpeakerReport } from "./speaker-report";
 import { YouTubePlayer } from "./youtube-player";
 
 type Playing = { id: string; sourceId: string; title: string; anchorAt: Date | null; pausedAtMs: number | null };
 
 // The host's player: audio plays here, songs advance when they end, and a
-// video that can't play is skipped.
+// video that can't play is skipped. It counts as a speaker while it can play.
 export function HostPlayer({ spaceId, playing }: { spaceId: string; playing: Playing }) {
   const [message, setMessage] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState(false);
   const dismiss = useCallback(() => setMessage(null), []);
+  useSpeakerReport(!blocked);
   return (
     <>
       <YouTubePlayer
+        sync="tight"
+        onBlocked={setBlocked}
         videoId={playing.sourceId}
         itemId={playing.id}
         anchorAt={playing.anchorAt}

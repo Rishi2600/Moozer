@@ -1,5 +1,6 @@
 "use client";
 
+import { clockOffset } from "@/lib/clock";
 import { positionMs } from "@/lib/queue/playback";
 import { formatDuration } from "@/lib/songs/links";
 import { useNow } from "@/lib/use-now";
@@ -16,7 +17,7 @@ type Props = {
 // DESIGN.md live progress bar: 6px track, amber-to-orange fill, tabular times.
 export function ProgressBar({ anchorAt, pausedAtMs, durationSeconds, size = "md", tone = "light" }: Props) {
   const now = useNow();
-  const elapsed = now === null ? 0 : positionMs({ anchorAt, pausedAtMs }, now) / 1000;
+  const elapsed = now === null ? 0 : positionMs({ anchorAt, pausedAtMs }, now + (clockOffset() ?? 0)) / 1000; // by the server's clock
   const total = durationSeconds ?? null;
   const shown = total !== null ? Math.min(elapsed, total) : elapsed;
   const percent = total ? Math.min(100, (shown / total) * 100) : 0;
