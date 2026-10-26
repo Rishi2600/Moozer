@@ -13,6 +13,7 @@ import { SongNudge } from "@/components/queue/song-nudge";
 import { RecapCard } from "@/components/space/recap-card";
 import { InviteCard } from "@/components/space/invite-card";
 import { InTheRoomCard } from "@/components/space/presence";
+import { SpeakerRequests, SpeakersCard } from "@/components/space/speakers";
 import { LikeButton } from "@/components/queue/like-button";
 import { getWallet } from "@/lib/boosts/wallet";
 import { likedVideoIds, listLiked } from "@/lib/songs/liked";
@@ -22,7 +23,7 @@ import { requireSession } from "@/lib/session";
 import { formatJoinCode } from "@/lib/spaces/codes";
 import { inSpace, openSpace } from "@/lib/spaces/data";
 import { getRecap } from "@/lib/spaces/recap";
-import { isSpeaker } from "@/lib/speakers/data";
+import { isSpeaker, listSpeakers } from "@/lib/speakers/data";
 
 export async function generateMetadata({ params }: PageProps<"/s/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -41,11 +42,12 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
   if (space.status === "ended") {
     return <RecapCard recap={await getRecap(space.id, user.id)} isHost={isHost} />;
   }
-  const [{ nowPlaying, queue }, wallet, recentLikes, approvedSpeaker] = await Promise.all([
+  const [{ nowPlaying, queue }, wallet, recentLikes, approvedSpeaker, speakers] = await Promise.all([
     getQueue(space.id, user.id),
     getWallet(user.id),
     listLiked(user.id, 6),
     isHost ? false : isSpeaker(space.id, user.id),
+    isHost ? listSpeakers(space.id) : [],
   ]);
   const liked = await likedVideoIds(user.id, nowPlaying ? [nowPlaying.sourceId] : []);
   const live = space.status === "live"; // paused and scheduled spaces don't play
@@ -108,9 +110,11 @@ export default async function SpaceQueuePage({ params }: PageProps<"/s/[slug]">)
       <aside className="flex flex-col gap-gutter-desktop" aria-label="Space tools">
         <InviteCard link={`${await getOrigin()}/s/${space.slug}`} code={formatJoinCode(space.joinCode)} />
         <InTheRoomCard host={isHost ? { spaceId: space.id, userId: user.id } : undefined} />
+        {isHost && <SpeakersCard spaceId={space.id} approved={speakers} />}
         <AddSongCard spaceId={space.id} liked={recentLikes} />
       </aside>
       <AddSongSheet spaceId={space.id} liked={recentLikes} />
+      {isHost && <SpeakerRequests spaceId={space.id} />}
       {!isHost && (
         <SongNudge
           viewerId={user.id}

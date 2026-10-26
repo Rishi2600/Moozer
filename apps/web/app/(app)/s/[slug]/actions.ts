@@ -13,6 +13,7 @@ import { lookupYouTube, type SongDetails } from "@/lib/songs/lookup";
 import { searchYouTube } from "@/lib/songs/search";
 import { SEARCH_PER_PERSON } from "@/lib/songs/search-rules";
 import { openSpaceNow, removeFromSpace, setSpaceOnBreak } from "@/lib/spaces/data";
+import { approveSpeaker, revokeSpeaker } from "@/lib/speakers/data";
 
 type Copy = NonNullable<Awaited<ReturnType<typeof findActiveCopy>>>;
 export type Preview =
@@ -213,6 +214,28 @@ export async function removePersonAction(spaceId: string, userId: string) {
   if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
   if (!(await removeFromSpace(spaceId, session.user.id, userId))) {
     return { ok: false as const, error: "Only the host can remove people, and not themselves." };
+  }
+  refresh();
+  return { ok: true as const };
+}
+
+// Host only: let a guest play the music on their own device too. The host's
+// screen then tells the guest over realtime.
+export async function approveSpeakerAction(spaceId: string, userId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await approveSpeaker(spaceId, session.user.id, userId))) {
+    return { ok: false as const, error: "Couldn't allow that speaker. They may have left the space." };
+  }
+  return { ok: true as const };
+}
+
+// Host only: turn a guest's speaker off; they'd have to ask again.
+export async function revokeSpeakerAction(spaceId: string, userId: string) {
+  const session = await getSession();
+  if (!session) return { ok: false as const, error: "Your session ended. Sign in again." };
+  if (!(await revokeSpeaker(spaceId, session.user.id, userId))) {
+    return { ok: false as const, error: "Only the host can turn speakers off." };
   }
   refresh();
   return { ok: true as const };
