@@ -31,13 +31,17 @@ type Room = {
 // Who's connected to which space, presence, batched "changed" messages, and
 // guest speakers (requests, answers, who's playing).
 // onCount hears every space's head count as it changes (0 when it empties).
+// onSpeakersGone hears when a space has had no speaker for
+// SPEAKER_RULES.emptyPauseMs (so its song can pause).
 export class Rooms {
   private rooms = new Map<string, Room>();
   private buckets = new WeakMap<Member, Bucket>();
+  private quiet = new Map<string, ReturnType<typeof setTimeout>>(); // spaces counting down to a pause
 
   constructor(
     private batchMs = 100,
-    private onCount: (spaceId: string, here: number) => void = () => {}
+    private onCount: (spaceId: string, here: number) => void = () => {},
+    private onSpeakersGone: (spaceId: string) => void = () => {}
   ) {}
 
   join(spaceId: string, member: Member) {
@@ -59,10 +63,14 @@ export class Rooms {
       for (const request of room.requests.values()) clearTimeout(request.timer);
       this.rooms.delete(spaceId);
       this.onCount(spaceId, 0);
+      if (member.device) this.speakersChanged(spaceId);
       return;
     }
     this.broadcastPresence(spaceId);
-    if (member.device) this.toHost(room, this.speakersMessage(room));
+    if (member.device) {
+      this.toHost(room, this.speakersMessage(room));
+      this.speakersChanged(spaceId);
+    }
     // A guest who closed every screen isn't waiting any more.
     const request = room.requests.get(member.userId);
     if (request && ![...room.members].some((m) => m.userId === member.userId)) {
@@ -125,6 +133,7 @@ export class Rooms {
     if (!room?.members.has(member) || (member.device ?? null) === device) return false;
     member.device = device;
     this.toHost(room, this.speakersMessage(room));
+    this.speakersChanged(spaceId);
     return true;
   }
 
@@ -183,6 +192,25 @@ export class Rooms {
     let connections = 0;
     for (const room of this.rooms.values()) connections += room.members.size;
     return { spaces: this.rooms.size, connections };
+  }
+
+  // The last speaker going quiet starts the countdown to a pause; any
+  // speaker coming back cancels it.
+  private speakersChanged(spaceId: string) {
+    const count = this.speakerCount(spaceId);
+    const timer = this.quiet.get(spaceId);
+    if (count > 0) {
+      if (timer) clearTimeout(timer);
+      this.quiet.delete(spaceId);
+    } else if (!timer) {
+      this.quiet.set(
+        spaceId,
+        setTimeout(() => {
+          this.quiet.delete(spaceId);
+          if (this.speakerCount(spaceId) === 0) this.onSpeakersGone(spaceId);
+        }, SPEAKER_RULES.emptyPauseMs)
+      );
+    }
   }
 
   // Per screen, so the host sees "Maya's laptop" and "TV" separately; the same

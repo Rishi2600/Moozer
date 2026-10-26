@@ -213,5 +213,42 @@ describe("Removing someone", () => {
       expect(last(late.inbox, "speaker-requests")).toMatchObject({ requests: [{ id: "sam" }] });
       expect(last(late.inbox, "speakers")).toEqual({ type: "speakers", speakers: [] });
     });
+
+    it("pauses after 20 s with no speaker, unless one comes back", () => {
+      vi.useFakeTimers();
+      const gone: string[] = [];
+      const rooms = new Rooms(100, () => {}, (spaceId) => gone.push(spaceId));
+      const host = member("maya", "Maya", true), sam = member("sam", "Sam");
+      rooms.join("s1", host.m);
+      rooms.join("s1", sam.m);
+      rooms.setSpeaker("s1", host.m, "laptop");
+      rooms.setSpeaker("s1", sam.m, "phone");
+      rooms.leave("s1", host.m);
+      vi.advanceTimersByTime(30_000);
+      expect(gone).toEqual([]); // Sam's still playing
+      rooms.setSpeaker("s1", sam.m, null);
+      vi.advanceTimersByTime(10_000);
+      rooms.setSpeaker("s1", sam.m, "phone"); // back in time
+      vi.advanceTimersByTime(30_000);
+      expect(gone).toEqual([]);
+      rooms.leave("s1", sam.m); // the room is empty now
+      vi.advanceTimersByTime(19_000);
+      expect(gone).toEqual([]);
+      vi.advanceTimersByTime(1000);
+      expect(gone).toEqual(["s1"]);
+      vi.useRealTimers();
+    });
+
+    it("doesn't count down in a space that never had a speaker", () => {
+      vi.useFakeTimers();
+      const gone: string[] = [];
+      const rooms = new Rooms(100, () => {}, (spaceId) => gone.push(spaceId));
+      const leo = member("leo");
+      rooms.join("s1", leo.m);
+      rooms.leave("s1", leo.m);
+      vi.advanceTimersByTime(60_000);
+      expect(gone).toEqual([]);
+      vi.useRealTimers();
+    });
   });
 });

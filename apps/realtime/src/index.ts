@@ -30,7 +30,24 @@ const counts = new CountWriter(async (changed) => {
 const resetCounts = () => pool.query("UPDATE space SET listeners = 0 WHERE listeners <> 0");
 resetCounts().catch((err) => console.error("realtime: couldn't reset listener counts", err.message));
 
-const rooms = new Rooms(100, (spaceId, here) => counts.set(spaceId, here));
+// No speaker for a while: pause the playing song where it is, so it doesn't
+// run on to an empty room. Same result as the host's Pause (pausedAtMs =
+// position, by this server's clock), kept within the song when its length is known.
+const pauseQuietSpace = (spaceId: string) =>
+  pool
+    .query(
+      `UPDATE queue_item q
+          SET "pausedAtMs" = GREATEST(0, LEAST(
+                $2::bigint - (EXTRACT(EPOCH FROM q."anchorAt") * 1000)::bigint,
+                COALESCE(q."durationSeconds"::bigint * 1000 - 1000, 2147483647)))::int
+         FROM space s
+        WHERE q."spaceId" = $1 AND q.status = 'playing' AND q."pausedAtMs" IS NULL AND q."anchorAt" IS NOT NULL
+          AND s.id = q."spaceId" AND s.status = 'live'`,
+      [spaceId, Date.now()]
+    )
+    .catch((err) => console.error("realtime: couldn't pause a quiet space", err.message));
+
+const rooms = new Rooms(100, (spaceId, here) => counts.set(spaceId, here), (spaceId) => void pauseQuietSpace(spaceId));
 
 // Guests only play with sound once the host has approved them (stored by the website).
 const isApprovedSpeaker = async (spaceId: string, userId: string) =>
