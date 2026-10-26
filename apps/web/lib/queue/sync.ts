@@ -38,8 +38,9 @@ export function syncTick(state: SyncState, error: number, now: number): { state:
   return { state: { samples, lead, justSeeked: false, cooldownUntil: 0 }, seek: false, median: e };
 }
 
-// A jump the player made itself (a new song, pause/resume, ±10 s): start
-// measuring afresh once it settles, and learn from where it lands.
-export function afterJump(state: SyncState, now: number): SyncState {
-  return { samples: [], lead: state.lead, justSeeked: true, cooldownUntil: now + SYNC.cooldownMs };
+// A jump the player made itself: start measuring afresh once it settles.
+// A seek (pause/resume, ±10 s) teaches the lead where it lands; loading a new
+// song doesn't, since starting a video takes far longer than seeking in one.
+export function afterJump(state: SyncState, now: number, learn = true): SyncState {
+  return { samples: [], lead: state.lead, justSeeked: learn, cooldownUntil: now + SYNC.cooldownMs };
 }

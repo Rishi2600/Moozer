@@ -153,9 +153,21 @@ export function GuestSpeakerControls() {
   }
 
   if (!live) return null; // asking only makes sense while the music can play
+  const offline = status !== "live";
+  // Turned off by the host: earlier answers no longer count until they ask again.
+  if (revoked) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <p className="text-body-sm text-muted-foreground">{hostName} turned off your speaker.</p>
+        <Button variant="secondary" onClick={ask} disabled={offline} className="self-start">
+          <Volume2 aria-hidden />
+          Play it on my speaker
+        </Button>
+      </div>
+    );
+  }
   const answer = speakerAnswer && (askedAt === null || speakerAnswer.at >= askedAt) ? speakerAnswer : null;
   const waiting = askedAt !== null && !answer;
-  const offline = status !== "live";
 
   if (waiting || answer?.answer === "allowed") {
     return (
@@ -169,7 +181,6 @@ export function GuestSpeakerControls() {
   }
   return (
     <div className="flex flex-col gap-1.5">
-      {revoked && <p className="text-body-sm text-muted-foreground">{hostName} turned off your speaker.</p>}
       {answer?.answer === "expired" && <p className="text-body-sm text-muted-foreground">{hostName} didn&apos;t answer.</p>}
       <Button variant="secondary" onClick={ask} disabled={offline} className="self-start">
         <Volume2 aria-hidden />

@@ -60,4 +60,10 @@ describe("sync", () => {
     const state = afterJump({ samples: [0.1, 0.2], lead: 0.4, justSeeked: false, cooldownUntil: 0 }, 5000);
     expect(state).toEqual({ samples: [], lead: 0.4, justSeeked: true, cooldownUntil: 5000 + SYNC.cooldownMs });
   });
+
+  it("doesn't learn the lead from loading a new song", () => {
+    let state = afterJump(initialSync(), 0, false);
+    state = run(state, [-1.2, -1.2, -1.2], 3000).state; // start-up delay, then a corrective seek
+    expect(state.lead).toBe(0);
+  });
 });

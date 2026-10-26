@@ -72,6 +72,7 @@ export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = f
     latest.current = { videoId, itemId, anchorAt, pausedAtMs, muted, onEnded, onError, onBlocked };
   });
   const syncState = useRef(initialSync());
+  const started = useRef(false); // the first correction after the player starts is start-up, not seek, delay
   const tight = sync === "tight";
   const anchorMs = anchorAt?.getTime() ?? null;
 
@@ -126,11 +127,12 @@ export function YouTubePlayer({ videoId, itemId, anchorAt, pausedAtMs, muted = f
     const lead = tight && pausedAtMs === null ? syncState.current.lead : 0;
     if (p.getVideoData().video_id !== videoId) {
       p.loadVideoById({ videoId, startSeconds: target + lead });
-      syncState.current = afterJump(syncState.current, Date.now());
+      syncState.current = afterJump(syncState.current, Date.now(), false);
     } else if (Math.abs(p.getCurrentTime() - target) > (tight ? SYNC.threshold : 3)) {
       p.seekTo(target + lead, true);
-      syncState.current = afterJump(syncState.current, Date.now());
+      syncState.current = afterJump(syncState.current, Date.now(), started.current);
     }
+    started.current = true;
     if (pausedAtMs !== null) {
       p.pauseVideo();
       return;
